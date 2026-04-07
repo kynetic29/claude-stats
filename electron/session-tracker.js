@@ -1,4 +1,5 @@
 const { getCurrentSession, getLimitEstimates, getEarliestRequestInWindow, getWeeklyTokens } = require('./db')
+const { getLatestUsage } = require('./claude-usage-poller')
 
 const FIVE_HOURS_MS = 5 * 60 * 60 * 1000
 
@@ -15,7 +16,15 @@ function getSessionStatus() {
   const windowResetAt = earliestInWindow ? earliestInWindow + FIVE_HOURS_MS : null
   const remainingMs = windowResetAt ? Math.max(0, windowResetAt - Date.now()) : FIVE_HOURS_MS
 
-  if (!session) {
+  // Local token data for detail breakdown
+  const windowTokens = getWeeklyTokens(windowStart)
+  const totalTokens = windowTokens.total_tokens
+
+  // Check for authoritative API data from claude.ai
+  const apiUsage = getLatestUsage()
+  const hasApiData = apiUsage && apiUsage.five_hour != null
+
+  if (!session && !hasApiData) {
     return {
       active: false,
       sessionId: null,
@@ -33,15 +42,40 @@ function getSessionStatus() {
       cost: 0,
       estimatedLimit: 250000,
       confidence: 0.1,
+      source: 'local',
     }
   }
 
-  // Session tokens: sum all tokens across all sessions in the current 5-hour window,
-  // because rate limits are per-window, not per individual session file.
-  const windowTokens = getWeeklyTokens(windowStart)
-  const totalTokens = windowTokens.total_tokens
+  if (hasApiData) {
+    // Use authoritative data from claude.ai usage API
+    const apiResetAt = new Date(apiUsage.five_hour.resets_at).getTime()
+    const apiRemainingMs = Math.max(0, apiResetAt - Date.now())
 
-  // Find the session limit estimate
+    return {
+      active: session ? session.is_active === 1 : false,
+      sessionId: session?.session_id || null,
+      tokens: totalTokens,
+      inputTokens: windowTokens.input_tokens,
+      outputTokens: windowTokens.output_tokens,
+      cacheCreation: windowTokens.cache_creation,
+      cacheRead: windowTokens.cache_read,
+      requestCount: session?.request_count || 0,
+      model: session?.model || null,
+      project: session?.project || null,
+      startedAt: earliestInWindow,
+      lastRequestAt: session?.last_request_at || null,
+      elapsedMs: earliestInWindow ? Date.now() - earliestInWindow : 0,
+      remainingMs: apiRemainingMs,
+      windowResetAt: apiResetAt,
+      pct: apiUsage.five_hour.utilization,
+      estimatedLimit: null,
+      confidence: 1.0,
+      cost: windowTokens.total_cost,
+      source: 'claude-api',
+    }
+  }
+
+  // Fallback: local estimation
   const estimates = getLimitEstimates()
   const sessionEstimate =
     estimates.find(e => e.type === 'session' && e.model === 'all') ||
@@ -72,6 +106,7 @@ function getSessionStatus() {
     estimatedLimit: sessionEstimate.estimated_limit,
     confidence: sessionEstimate.confidence,
     cost: windowTokens.total_cost,
+    source: 'local',
   }
 }
 

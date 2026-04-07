@@ -18,6 +18,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getLimitObservations: (limit) => ipcRenderer.invoke('limits:get-observations', limit),
   updateLimitEstimate: (data) => ipcRenderer.invoke('limits:update-estimate', data),
 
+  // Claude.ai auth
+  claudeLogin: () => ipcRenderer.invoke('auth:login'),
+  claudeAuthStatus: () => ipcRenderer.invoke('auth:status'),
+  claudeLogout: () => ipcRenderer.invoke('auth:logout'),
+
   // App control
   quit: () => ipcRenderer.invoke('app:quit'),
+  resetSetup: () => ipcRenderer.invoke('app:reset-setup'),
 })

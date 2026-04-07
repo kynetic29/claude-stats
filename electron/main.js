@@ -91,6 +91,23 @@ function startUsagePolling(adminApiKey) {
   }, 60 * 60 * 1000)
 }
 
+async function startClaudeUsagePolling() {
+  const { checkAuth } = require('./claude-auth')
+  const { startPolling } = require('./claude-usage-poller')
+
+  try {
+    const auth = await checkAuth()
+    if (auth.authenticated && auth.orgId) {
+      startPolling(auth.orgId)
+      console.log('[claude-usage] Started polling with org', auth.orgId)
+    } else {
+      console.log('[claude-usage] Not authenticated, skipping usage polling')
+    }
+  } catch (e) {
+    console.error('[claude-usage] Failed to start polling:', e.message)
+  }
+}
+
 app.whenReady().then(async () => {
   // Initialize database (triggers schema creation + migrations)
   require('./db').getDb()
@@ -140,6 +157,7 @@ app.whenReady().then(async () => {
   const config = readConfig()
   if (config && config.displayId) {
     startUsagePolling(config.adminApiKey)
+    startClaudeUsagePolling()
     openDashboard(config)
   } else {
     openOnboarding()
@@ -185,9 +203,16 @@ app.on('will-quit', () => {
 
 ipcMain.handle('app:quit', () => app.quit())
 
+ipcMain.handle('app:reset-setup', () => {
+  require('./config').deleteConfig()
+  app.relaunch()
+  app.exit(0)
+})
+
 ipcMain.handle('data:get-dashboard', () => {
   const { getSessionStatus } = require('./session-tracker')
   const { getWeeklyStatus } = require('./weekly-tracker')
+  const { getPollError } = require('./claude-usage-poller')
   const { readConfig } = require('./config')
   const db = require('./db')
 
@@ -203,6 +228,7 @@ ipcMain.handle('data:get-dashboard', () => {
     dailyBreakdown: db.getDailyBreakdown(
       require('./limit-estimator').getWeekStartTimestamp(resetDay, resetHour)
     ),
+    claudeApiError: getPollError(),
   }
 })
 
@@ -239,6 +265,7 @@ ipcMain.handle('config:get-displays', () => {
 ipcMain.handle('config:complete-onboarding', (event, config) => {
   require('./config').writeConfig(config)
   startUsagePolling(config.adminApiKey)
+  startClaudeUsagePolling()
   openDashboard(config)
   const prev = BrowserWindow.getAllWindows().find(w => w !== mainWindow)
   if (prev) prev.close()
@@ -259,5 +286,48 @@ ipcMain.handle('limits:get-observations', (event, limit = 50) => {
 
 ipcMain.handle('limits:update-estimate', (event, data) => {
   require('./db').upsertLimitEstimate(data)
+  return { ok: true }
+})
+
+// ── Claude.ai Auth ──────────────────────────────────────────────────────────
+
+ipcMain.handle('auth:login', async () => {
+  const { clearAuth, openLoginWindow } = require('./claude-auth')
+  const { stopPolling, startPolling } = require('./claude-usage-poller')
+
+  try {
+    // Clear any stale session data before a fresh login
+    stopPolling()
+    await clearAuth()
+    console.log('[claude-auth] Cleared previous session, opening login window...')
+
+    const result = await openLoginWindow()
+    // Start polling immediately after successful login
+    startPolling(result.orgId)
+    console.log('[claude-usage] Authenticated, polling started for org', result.orgId)
+    return { ok: true, orgId: result.orgId }
+  } catch (e) {
+    return { ok: false, error: e.message }
+  }
+})
+
+ipcMain.handle('auth:status', async () => {
+  const { checkAuth } = require('./claude-auth')
+  const { getPollError } = require('./claude-usage-poller')
+
+  const auth = await checkAuth()
+  return {
+    authenticated: auth.authenticated,
+    orgId: auth.orgId,
+    pollError: getPollError(),
+  }
+})
+
+ipcMain.handle('auth:logout', async () => {
+  const { clearAuth } = require('./claude-auth')
+  const { stopPolling } = require('./claude-usage-poller')
+
+  stopPolling()
+  await clearAuth()
   return { ok: true }
 })

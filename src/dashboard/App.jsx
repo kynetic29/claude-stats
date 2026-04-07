@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { usePolledData } from './hooks/usePolledData'
 import LimitGauges from './components/LimitGauges'
 import StatCards from './components/StatCards'
@@ -9,6 +10,7 @@ import { BG, DIM, FONT_SANS, FONT_MONO } from './theme'
 
 export default function App() {
   const { data, error } = usePolledData(3000)
+  const [connecting, setConnecting] = useState(false)
 
   if (!data) {
     return (
@@ -25,7 +27,8 @@ export default function App() {
     )
   }
 
-  const { session, weekly, sessions, limits, dailyBreakdown } = data
+  const { session, weekly, sessions, limits, dailyBreakdown, claudeApiError } = data
+  const isClaudeConnected = session.source === 'claude-api'
 
   return (
     <div style={{
@@ -72,10 +75,60 @@ export default function App() {
             {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
           </div>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: 9, color: '#334155', fontFamily: FONT_MONO }}>
-            Ctrl+Shift+Q exit · Ctrl+Shift+L mark limit · Ctrl+Shift+R reset
-          </span>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {!isClaudeConnected && (
+            <button
+              onClick={async () => {
+                setConnecting(true)
+                try {
+                  await window.electronAPI?.claudeLogin()
+                } catch {}
+                setConnecting(false)
+              }}
+              title={claudeApiError === 'auth_expired' ? 'Session expired — click to reconnect' : 'Connect to Claude.ai for live usage data'}
+              style={{
+                background: 'none',
+                border: `1px solid ${claudeApiError === 'auth_expired' ? '#f59e0b' : '#334155'}`,
+                borderRadius: 6,
+                color: claudeApiError === 'auth_expired' ? '#f59e0b' : '#64748b',
+                cursor: connecting ? 'wait' : 'pointer',
+                padding: '4px 10px', fontSize: 11,
+                fontFamily: FONT_MONO,
+                opacity: connecting ? 0.5 : 1,
+              }}
+              onMouseEnter={e => { if (!connecting) { e.target.style.borderColor = '#34d399'; e.target.style.color = '#34d399' } }}
+              onMouseLeave={e => { e.target.style.borderColor = claudeApiError === 'auth_expired' ? '#f59e0b' : '#334155'; e.target.style.color = claudeApiError === 'auth_expired' ? '#f59e0b' : '#64748b' }}
+              disabled={connecting}
+            >
+              {connecting ? '...' : claudeApiError === 'auth_expired' ? '!' : 'C'}
+            </button>
+          )}
+          <button
+            onClick={() => window.electronAPI?.recordLimitHit('session')}
+            title="Record Limit Hit (Ctrl+Shift+L)"
+            style={{
+              background: 'none', border: '1px solid #334155', borderRadius: 6,
+              color: '#64748b', cursor: 'pointer', padding: '4px 10px', fontSize: 11,
+              fontFamily: FONT_MONO,
+            }}
+            onMouseEnter={e => { e.target.style.borderColor = '#f59e0b'; e.target.style.color = '#f59e0b' }}
+            onMouseLeave={e => { e.target.style.borderColor = '#334155'; e.target.style.color = '#64748b' }}
+          >
+            L
+          </button>
+          <button
+            onClick={() => window.electronAPI?.resetSetup()}
+            title="Reset Setup (Ctrl+Shift+R)"
+            style={{
+              background: 'none', border: '1px solid #334155', borderRadius: 6,
+              color: '#64748b', cursor: 'pointer', padding: '4px 10px', fontSize: 11,
+              fontFamily: FONT_MONO,
+            }}
+            onMouseEnter={e => { e.target.style.borderColor = '#8b5cf6'; e.target.style.color = '#8b5cf6' }}
+            onMouseLeave={e => { e.target.style.borderColor = '#334155'; e.target.style.color = '#64748b' }}
+          >
+            R
+          </button>
           <button
             onClick={() => window.electronAPI?.quit()}
             title="Exit (Ctrl+Shift+Q)"

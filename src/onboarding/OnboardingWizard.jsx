@@ -31,6 +31,7 @@ const inputStyle = (active) => ({
 
 const STEPS = [
   { title: 'Welcome to ClaudeStats', subtitle: 'Real-time Claude Code usage monitoring' },
+  { title: 'Connect to Claude.ai', subtitle: 'Get real-time usage data matching the Claude usage panel' },
   { title: 'Admin API Key (Optional)', subtitle: 'Enables org-wide usage history from Anthropic' },
   { title: 'Weekly Reset Schedule', subtitle: 'When does your weekly limit reset?' },
   { title: 'Choose Display', subtitle: 'Pick which monitor shows the dashboard' },
@@ -38,6 +39,9 @@ const STEPS = [
 
 export default function OnboardingWizard() {
   const [step, setStep] = useState(0)
+  const [claudeConnected, setClaudeConnected] = useState(false)
+  const [claudeConnecting, setClaudeConnecting] = useState(false)
+  const [claudeError, setClaudeError] = useState('')
   const [adminApiKey, setAdminApiKey] = useState('')
   const [resetDay, setResetDay] = useState(1) // Monday
   const [resetHour, setResetHour] = useState(6) // 6 AM
@@ -47,7 +51,7 @@ export default function OnboardingWizard() {
   const [error, setError] = useState('')
 
   useEffect(() => {
-    if (step !== 3) return
+    if (step !== 4) return
     window.electronAPI.getDisplays().then(list => {
       setDisplays(list)
       const preferred = list.find(d => !d.isPrimary) ?? list[0]
@@ -74,8 +78,9 @@ export default function OnboardingWizard() {
 
   const canAdvance =
     step === 0 ? true :
-    step === 1 ? true : // optional
-    step === 2 ? true :
+    step === 1 ? true : // optional (Claude.ai login)
+    step === 2 ? true : // optional (admin API key)
+    step === 3 ? true :
     !!selectedDisplay
 
   const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
@@ -152,8 +157,64 @@ export default function OnboardingWizard() {
           </div>
         )}
 
-        {/* Step 1 — Admin API Key (Optional) */}
+        {/* Step 1 — Claude.ai Login (Optional) */}
         {step === 1 && (
+          <div>
+            {claudeConnected ? (
+              <div style={{ textAlign: 'center', padding: '20px 0' }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>&#10003;</div>
+                <div style={{ fontSize: 16, fontWeight: 600, color: '#34d399', marginBottom: 8 }}>Connected to Claude.ai</div>
+                <p style={{ fontSize: 12, color: DIM, marginBottom: 0 }}>
+                  Your dashboard will show real-time usage data matching the Claude usage panel.
+                </p>
+              </div>
+            ) : (
+              <div>
+                <p style={{ fontSize: 14, color: '#cbd5e1', lineHeight: 1.7, marginTop: 0 }}>
+                  Sign in to your Claude.ai account to get <strong style={{ color: '#e2e8f0' }}>exact, real-time</strong> session
+                  and weekly usage percentages — the same data shown on the Claude usage panel.
+                </p>
+                <div style={{ textAlign: 'center', margin: '20px 0' }}>
+                  <button
+                    onClick={async () => {
+                      setClaudeConnecting(true)
+                      setClaudeError('')
+                      try {
+                        const result = await window.electronAPI.claudeLogin()
+                        if (result.ok) {
+                          setClaudeConnected(true)
+                        } else {
+                          setClaudeError(result.error || 'Login failed')
+                        }
+                      } catch (e) {
+                        setClaudeError(e.message || 'Login failed')
+                      }
+                      setClaudeConnecting(false)
+                    }}
+                    disabled={claudeConnecting}
+                    style={{
+                      ...primaryBtn,
+                      padding: '12px 32px',
+                      fontSize: 15,
+                      opacity: claudeConnecting ? 0.6 : 1,
+                    }}
+                  >
+                    {claudeConnecting ? 'Waiting for login...' : 'Sign in to Claude.ai'}
+                  </button>
+                </div>
+                {claudeError && (
+                  <p style={{ color: '#f87171', fontSize: 12, textAlign: 'center' }}>{claudeError}</p>
+                )}
+                <p style={{ fontSize: 12, color: '#475569', marginBottom: 0, textAlign: 'center' }}>
+                  You can skip this — the dashboard will estimate usage from local data instead.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Step 2 — Admin API Key (Optional) */}
+        {step === 2 && (
           <div>
             <label style={{
               fontSize: 11, color: DIM, fontWeight: 600,
@@ -164,7 +225,7 @@ export default function OnboardingWizard() {
               autoFocus type="password"
               value={adminApiKey}
               onChange={e => setAdminApiKey(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && setStep(2)}
+              onKeyDown={e => e.key === 'Enter' && setStep(3)}
               placeholder="sk-ant-admin01-... (optional)"
               style={inputStyle(adminApiKey.length > 0)}
             />
@@ -179,8 +240,8 @@ export default function OnboardingWizard() {
           </div>
         )}
 
-        {/* Step 2 — Weekly Reset */}
-        {step === 2 && (
+        {/* Step 3 — Weekly Reset */}
+        {step === 3 && (
           <div>
             <label style={{
               fontSize: 11, color: DIM, fontWeight: 600,
@@ -219,8 +280,8 @@ export default function OnboardingWizard() {
           </div>
         )}
 
-        {/* Step 3 — Display picker */}
-        {step === 3 && (
+        {/* Step 4 — Display picker */}
+        {step === 4 && (
           <div>
             {displays.length === 0 ? (
               <div style={{ color: DIM, fontSize: 13 }}>Detecting displays…</div>
@@ -276,13 +337,13 @@ export default function OnboardingWizard() {
             <button onClick={() => setStep(s => s - 1)} style={ghostBtn}>Back</button>
           ) : <div />}
 
-          {step < 3 ? (
+          {step < 4 ? (
             <button
               onClick={() => setStep(s => s + 1)}
               disabled={!canAdvance}
               style={{ ...primaryBtn, opacity: canAdvance ? 1 : 0.4 }}
             >
-              {step === 0 ? 'Get Started' : step === 1 && !adminApiKey.trim() ? 'Skip' : 'Continue'}
+              {step === 0 ? 'Get Started' : step === 1 && !claudeConnected ? 'Skip' : step === 2 && !adminApiKey.trim() ? 'Skip' : 'Continue'}
             </button>
           ) : (
             <button

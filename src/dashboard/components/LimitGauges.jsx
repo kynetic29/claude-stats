@@ -40,10 +40,11 @@ function LimitEditor({ label, currentValue, onSave, onCancel }) {
   )
 }
 
-function GaugeBar({ label, pct, current, limit, confidence, countdown, countdownLabel, color, onEditLimit }) {
+function GaugeBar({ label, pct, current, limit, confidence, countdown, countdownLabel, color, onEditLimit, source }) {
   const remaining = useCountdown(countdown)
   const barColor = getLimitColor(pct)
-  const isLowConfidence = confidence < 0.3
+  const isAuthoritative = source === 'claude-api'
+  const isLowConfidence = !isAuthoritative && confidence < 0.3
   const pulse = pct >= 90
 
   return (
@@ -53,8 +54,14 @@ function GaugeBar({ label, pct, current, limit, confidence, countdown, countdown
     }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-        <div style={{ fontSize: 11, color: DIM, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        <div style={{ fontSize: 11, color: DIM, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 6 }}>
           {label}
+          {isAuthoritative && (
+            <span style={{
+              fontSize: 8, color: '#34d399', fontWeight: 700, letterSpacing: '0.1em',
+              background: '#34d39915', padding: '1px 5px', borderRadius: 3,
+            }}>LIVE</span>
+          )}
         </div>
         <div style={{ fontSize: 10, color: DIM }}>
           {countdownLabel}: <span style={{ color: TEXT, fontFamily: FONT_MONO }}>{fmtCountdown(remaining)}</span>
@@ -69,14 +76,20 @@ function GaugeBar({ label, pct, current, limit, confidence, countdown, countdown
         }}>
           {isLowConfidence ? '~' : ''}{pct.toFixed(1)}%
         </span>
-        <span style={{ fontSize: 11, color: DIM }}>
-          {fmtTokens(current)} / {limit > 0 ? fmtTokens(limit) : (
-            <span onClick={onEditLimit} style={{ color: '#38bdf8', cursor: 'pointer', textDecoration: 'underline' }}>set limit</span>
-          )}
-          {limit > 0 && (
-            <span onClick={onEditLimit} style={{ color: '#475569', cursor: 'pointer', marginLeft: 4 }} title="Edit limit">✎</span>
-          )}
-        </span>
+        {isAuthoritative ? (
+          <span style={{ fontSize: 11, color: DIM }}>
+            {current > 0 && fmtTokens(current)}
+          </span>
+        ) : (
+          <span style={{ fontSize: 11, color: DIM }}>
+            {fmtTokens(current)} / {limit > 0 ? fmtTokens(limit) : (
+              <span onClick={onEditLimit} style={{ color: '#38bdf8', cursor: 'pointer', textDecoration: 'underline' }}>set limit</span>
+            )}
+            {limit > 0 && (
+              <span onClick={onEditLimit} style={{ color: '#475569', cursor: 'pointer', marginLeft: 4 }} title="Edit limit">&#9998;</span>
+            )}
+          </span>
+        )}
       </div>
 
       {/* Progress bar */}
@@ -143,6 +156,7 @@ export default function LimitGauges({ session, weekly, onEditLimit }) {
           countdownLabel="Resets in"
           color="#38bdf8"
           onEditLimit={() => setEditing('session')}
+          source={session.source}
         />
         <GaugeBar
           label="Weekly Limit"
@@ -154,6 +168,7 @@ export default function LimitGauges({ session, weekly, onEditLimit }) {
           countdownLabel="Resets"
           color="#34d399"
           onEditLimit={() => setEditing('weekly')}
+          source={weekly.source}
         />
       </div>
 
