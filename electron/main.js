@@ -240,6 +240,10 @@ ipcMain.handle('data:get-daily-summaries', () => {
   return require('./db').getDailySummaries()
 })
 
+ipcMain.handle('data:get-session-requests', (event, sessionId) => {
+  return require('./db').getRequestsBySessionId(sessionId)
+})
+
 ipcMain.handle('config:get', () => {
   return require('./config').readConfig()
 })

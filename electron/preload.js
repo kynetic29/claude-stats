@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getDashboardData: () => ipcRenderer.invoke('data:get-dashboard'),
   getSessions: (limit) => ipcRenderer.invoke('data:get-sessions', limit),
   getDailySummaries: () => ipcRenderer.invoke('data:get-daily-summaries'),
+  getSessionRequests: (sessionId) => ipcRenderer.invoke('data:get-session-requests', sessionId),
 
   // Config
   getConfig: () => ipcRenderer.invoke('config:get'),

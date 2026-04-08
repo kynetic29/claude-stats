@@ -267,6 +267,10 @@ function getStmts() {
       SELECT DISTINCT session_id FROM requests
     `),
 
+    getRequestsBySessionId: d.prepare(`
+      SELECT * FROM requests WHERE session_id = ? ORDER BY timestamp ASC
+    `),
+
     pruneOldRequests: d.prepare(`
       DELETE FROM requests WHERE timestamp < ?
     `),
@@ -335,6 +339,10 @@ function getRequestCountWeek(weekStartTimestamp) {
 
 function getDailyBreakdown(sinceTimestamp) {
   return getStmts().getDailyBreakdown.all(sinceTimestamp)
+}
+
+function getRequestsBySessionId(sessionId) {
+  return getStmts().getRequestsBySessionId.all(sessionId)
 }
 
 function getLimitEstimates() {
@@ -422,6 +430,7 @@ module.exports = {
   getRequestCountToday,
   getRequestCountWeek,
   getDailyBreakdown,
+  getRequestsBySessionId,
   getLimitEstimates,
   upsertLimitEstimate,
   insertLimitObservation,

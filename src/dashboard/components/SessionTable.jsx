@@ -1,6 +1,10 @@
+import { useState } from 'react'
 import { CARD_BG, BORDER, DIM, FONT_MONO, fmtTokens, fmtDuration, fmtCost, shortId, getModelColor } from '../theme'
+import SessionDetailModal from './SessionDetailModal'
 
 export default function SessionTable({ sessions }) {
+  const [selectedSession, setSelectedSession] = useState(null)
+  const [hoveredRow, setHoveredRow] = useState(null)
   if (!sessions || sessions.length === 0) {
     return (
       <div style={{
@@ -51,9 +55,14 @@ export default function SessionTable({ sessions }) {
               return (
                 <tr
                   key={s.session_id}
+                  onClick={() => setSelectedSession(s)}
+                  onMouseEnter={() => setHoveredRow(s.session_id)}
+                  onMouseLeave={() => setHoveredRow(null)}
                   style={{
                     borderTop: `1px solid ${BORDER}`,
-                    background: i % 2 === 0 ? 'transparent' : '#0a1628',
+                    background: hoveredRow === s.session_id ? '#1e293b' : (i % 2 === 0 ? 'transparent' : '#0a1628'),
+                    cursor: 'pointer',
+                    transition: 'background 0.15s',
                   }}
                 >
                   <td style={{ padding: '6px 8px', fontFamily: FONT_MONO, color: '#38bdf8', fontSize: 10 }}>
@@ -92,6 +101,12 @@ export default function SessionTable({ sessions }) {
           </tbody>
         </table>
       </div>
+      {selectedSession && (
+        <SessionDetailModal
+          session={selectedSession}
+          onClose={() => setSelectedSession(null)}
+        />
+      )}
     </div>
   )
 }
