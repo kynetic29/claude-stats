@@ -16,14 +16,16 @@ function TokenBar({ input, output, cache }) {
   )
 }
 
+const LOCAL_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone
+
 function fmtTime(timestamp) {
   const d = new Date(timestamp)
-  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
+  return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })
 }
 
 function fmtDate(timestamp) {
   const d = new Date(timestamp)
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
 export default function SessionDetailModal({ session, onClose }) {
@@ -155,7 +157,7 @@ export default function SessionDetailModal({ session, onClose }) {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 10 }}>
               <thead>
                 <tr style={{ background: BORDER }}>
-                  {['#', 'Time', 'Input', 'Output', 'Cache Write', 'Cache Read', 'Cost'].map(h => (
+                  {['#', `Time (${LOCAL_TZ})`, 'Input', 'Output', 'Cache Write', 'Cache Read', 'Cost'].map(h => (
                     <th key={h} style={{
                       padding: '6px 8px', textAlign: 'left', color: DIM,
                       fontWeight: 600, fontSize: 9, letterSpacing: '0.08em', textTransform: 'uppercase',
