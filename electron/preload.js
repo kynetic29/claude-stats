@@ -27,4 +27,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // App control
   quit: () => ipcRenderer.invoke('app:quit'),
   resetSetup: () => ipcRenderer.invoke('app:reset-setup'),
+  moveToDisplay: (displayId) => ipcRenderer.invoke('display:move', displayId),
 })

@@ -293,6 +293,30 @@ ipcMain.handle('limits:update-estimate', (event, data) => {
   return { ok: true }
 })
 
+ipcMain.handle('display:move', (event, displayId) => {
+  const { readConfig, writeConfig } = require('./config')
+  const displays = screen.getAllDisplays()
+  const target = displays.find(d => d.id === displayId)
+  if (!target || !mainWindow) return { ok: false, error: 'Display not found' }
+
+  const existing = readConfig() || {}
+  writeConfig({ ...existing, displayId })
+
+  mainWindow.setFullScreen(false)
+  mainWindow.setBounds({
+    x: target.bounds.x,
+    y: target.bounds.y,
+    width: target.bounds.width,
+    height: target.bounds.height,
+  })
+  if (process.platform === 'darwin') {
+    mainWindow.setSimpleFullScreen(true)
+  } else {
+    mainWindow.setFullScreen(true)
+  }
+  return { ok: true }
+})
+
 // ── Claude.ai Auth ──────────────────────────────────────────────────────────
 
 ipcMain.handle('auth:login', async () => {

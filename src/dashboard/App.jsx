@@ -11,6 +11,22 @@ import { BG, DIM, FONT_SANS, FONT_MONO } from './theme'
 export default function App() {
   const { data, error } = usePolledData(3000)
   const [connecting, setConnecting] = useState(false)
+  const [displayPickerOpen, setDisplayPickerOpen] = useState(false)
+  const [displays, setDisplays] = useState([])
+  const [movingDisplay, setMovingDisplay] = useState(null)
+
+  async function openDisplayPicker() {
+    const list = await window.electronAPI?.getDisplays()
+    setDisplays(list || [])
+    setDisplayPickerOpen(true)
+  }
+
+  async function pickDisplay(id) {
+    setMovingDisplay(id)
+    await window.electronAPI?.moveToDisplay(id)
+    setMovingDisplay(null)
+    setDisplayPickerOpen(false)
+  }
 
   if (!data) {
     return (
@@ -117,6 +133,19 @@ export default function App() {
             L
           </button>
           <button
+            onClick={openDisplayPicker}
+            title="Move to Display"
+            style={{
+              background: 'none', border: '1px solid #334155', borderRadius: 6,
+              color: '#64748b', cursor: 'pointer', padding: '4px 10px', fontSize: 11,
+              fontFamily: FONT_MONO,
+            }}
+            onMouseEnter={e => { e.target.style.borderColor = '#38bdf8'; e.target.style.color = '#38bdf8' }}
+            onMouseLeave={e => { e.target.style.borderColor = '#334155'; e.target.style.color = '#64748b' }}
+          >
+            ⊞
+          </button>
+          <button
             onClick={() => window.electronAPI?.resetSetup()}
             title="Reset Setup (Ctrl+Shift+R)"
             style={{
@@ -177,6 +206,67 @@ export default function App() {
       <div style={{ flexShrink: 0, marginTop: 4, fontSize: 9, color: '#334155', textAlign: 'center', fontFamily: FONT_MONO }}>
         OTLP/HTTP · localhost:4318 · JSONL scanner active · Polling every 3s
       </div>
+
+      {/* Display picker overlay */}
+      {displayPickerOpen && (
+        <div
+          onClick={() => setDisplayPickerOpen(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 100,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#1e293b', border: '1px solid #334155', borderRadius: 10,
+              padding: '16px 20px', minWidth: 280,
+              fontFamily: FONT_MONO,
+            }}
+          >
+            <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 12, letterSpacing: '0.08em' }}>
+              MOVE TO DISPLAY
+            </div>
+            {displays.map(d => (
+              <button
+                key={d.id}
+                onClick={() => pickDisplay(d.id)}
+                disabled={movingDisplay !== null}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  width: '100%', background: 'none',
+                  border: '1px solid #334155', borderRadius: 6,
+                  color: '#e2e8f0', cursor: movingDisplay ? 'wait' : 'pointer',
+                  padding: '8px 12px', fontSize: 12,
+                  fontFamily: FONT_MONO, marginBottom: 6,
+                  opacity: movingDisplay && movingDisplay !== d.id ? 0.4 : 1,
+                }}
+                onMouseEnter={e => { if (!movingDisplay) e.currentTarget.style.borderColor = '#38bdf8' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#334155' }}
+              >
+                <span>{d.label || `Display ${d.id}`}</span>
+                <span style={{ color: '#64748b', fontSize: 10, marginLeft: 12 }}>
+                  {d.bounds.width}×{d.bounds.height}
+                  {d.isPrimary && <span style={{ color: '#22c55e', marginLeft: 6 }}>primary</span>}
+                  {movingDisplay === d.id && <span style={{ color: '#38bdf8', marginLeft: 6 }}>moving…</span>}
+                </span>
+              </button>
+            ))}
+            <button
+              onClick={() => setDisplayPickerOpen(false)}
+              style={{
+                display: 'block', width: '100%', marginTop: 4,
+                background: 'none', border: 'none',
+                color: '#475569', cursor: 'pointer', fontSize: 11,
+                fontFamily: FONT_MONO, padding: '4px 0',
+              }}
+            >
+              cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
