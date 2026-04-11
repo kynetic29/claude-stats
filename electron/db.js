@@ -179,6 +179,18 @@ function getStmts() {
       FROM sessions WHERE first_request_at >= ?
     `),
 
+    getTokensInWindow: d.prepare(`
+      SELECT
+        COALESCE(SUM(input_tokens + output_tokens + cache_creation_tokens), 0) as total_tokens,
+        COALESCE(SUM(input_tokens), 0) as input_tokens,
+        COALESCE(SUM(output_tokens), 0) as output_tokens,
+        COALESCE(SUM(cache_creation_tokens), 0) as cache_creation,
+        COALESCE(SUM(cache_read_tokens), 0) as cache_read,
+        COALESCE(SUM(cost_usd), 0) as total_cost,
+        COUNT(*) as request_count
+      FROM requests WHERE timestamp >= ?
+    `),
+
     getCurrentSession: d.prepare(`
       SELECT * FROM sessions ORDER BY last_request_at DESC LIMIT 1
     `),
@@ -320,6 +332,10 @@ function getWeeklyTokens(weekStartTimestamp) {
   return getStmts().getWeeklyTokens.get(weekStartTimestamp)
 }
 
+function getTokensInWindow(windowStartTimestamp) {
+  return getStmts().getTokensInWindow.get(windowStartTimestamp)
+}
+
 function getCurrentSession() {
   return getStmts().getCurrentSession.get()
 }
@@ -425,6 +441,7 @@ module.exports = {
   getSessions,
   getSessionsSince,
   getWeeklyTokens,
+  getTokensInWindow,
   getCurrentSession,
   getEarliestRequestInWindow,
   getRequestCountToday,

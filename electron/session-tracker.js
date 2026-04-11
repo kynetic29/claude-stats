@@ -1,4 +1,4 @@
-const { getCurrentSession, getLimitEstimates, getEarliestRequestInWindow, getWeeklyTokens } = require('./db')
+const { getCurrentSession, getLimitEstimates, getEarliestRequestInWindow, getTokensInWindow } = require('./db')
 const { getLatestUsage } = require('./claude-usage-poller')
 
 const FIVE_HOURS_MS = 5 * 60 * 60 * 1000
@@ -16,8 +16,9 @@ function getSessionStatus() {
   const windowResetAt = earliestInWindow ? earliestInWindow + FIVE_HOURS_MS : null
   const remainingMs = windowResetAt ? Math.max(0, windowResetAt - Date.now()) : FIVE_HOURS_MS
 
-  // Local token data for detail breakdown
-  const windowTokens = getWeeklyTokens(windowStart)
+  // Local token data: query requests directly so long-running sessions
+  // (started > 5h ago) are still counted correctly within the rolling window.
+  const windowTokens = getTokensInWindow(windowStart)
   const totalTokens = windowTokens.total_tokens
 
   // Check for authoritative API data from claude.ai
@@ -59,7 +60,7 @@ function getSessionStatus() {
       outputTokens: windowTokens.output_tokens,
       cacheCreation: windowTokens.cache_creation,
       cacheRead: windowTokens.cache_read,
-      requestCount: session?.request_count || 0,
+      requestCount: windowTokens.request_count,
       model: session?.model || null,
       project: session?.project || null,
       startedAt: earliestInWindow,
@@ -94,7 +95,7 @@ function getSessionStatus() {
     outputTokens: windowTokens.output_tokens,
     cacheCreation: windowTokens.cache_creation,
     cacheRead: windowTokens.cache_read,
-    requestCount: session.request_count,
+    requestCount: windowTokens.request_count,
     model: session.model,
     project: session.project,
     startedAt: earliestInWindow,

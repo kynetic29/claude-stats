@@ -123,6 +123,7 @@ function openLoginWindow() {
       width: 520,
       height: 720,
       title: 'Sign in to Claude',
+      alwaysOnTop: true,
       webPreferences: {
         session: ses,
         contextIsolation: true,
