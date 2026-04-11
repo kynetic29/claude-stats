@@ -163,6 +163,10 @@ app.whenReady().then(async () => {
     openOnboarding()
   }
 
+  // Start auto-updater (no-op in dev mode)
+  const { initAutoUpdater } = require('./updater')
+  initAutoUpdater()
+
   // Global shortcuts
   globalShortcut.register('CommandOrControl+Shift+Q', () => app.quit())
   globalShortcut.register('CommandOrControl+Shift+R', () => {
@@ -202,6 +206,15 @@ app.on('will-quit', () => {
 // ── IPC Handlers ─────────────────────────────────────────────────────────────
 
 ipcMain.handle('app:quit', () => app.quit())
+
+ipcMain.handle('update:get-status', () => {
+  return require('./updater').getLastStatus()
+})
+
+ipcMain.handle('update:install', () => {
+  require('./updater').quitAndInstall()
+  return { ok: true }
+})
 
 ipcMain.handle('app:reset-setup', () => {
   require('./config').deleteConfig()

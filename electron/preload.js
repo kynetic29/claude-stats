@@ -28,4 +28,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   quit: () => ipcRenderer.invoke('app:quit'),
   resetSetup: () => ipcRenderer.invoke('app:reset-setup'),
   moveToDisplay: (displayId) => ipcRenderer.invoke('display:move', displayId),
+
+  // Auto-updater
+  getUpdateStatus: () => ipcRenderer.invoke('update:get-status'),
+  installUpdate: () => ipcRenderer.invoke('update:install'),
+  onUpdateStatus: (handler) => {
+    const listener = (_event, status) => handler(status)
+    ipcRenderer.on('update-status', listener)
+    return () => ipcRenderer.removeListener('update-status', listener)
+  },
 })

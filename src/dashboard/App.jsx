@@ -6,6 +6,7 @@ import AlertBanner from './components/AlertBanner'
 import WeeklyChart from './components/WeeklyChart'
 import SessionTable from './components/SessionTable'
 import LimitLearning from './components/LimitLearning'
+import UpdateToast from './components/UpdateToast'
 import { BG, DIM, FONT_SANS, FONT_MONO } from './theme'
 
 export default function App() {
@@ -92,6 +93,7 @@ export default function App() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <UpdateToast />
           {!isClaudeConnected && (
             <button
               onClick={async () => {
