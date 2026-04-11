@@ -29,6 +29,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   resetSetup: () => ipcRenderer.invoke('app:reset-setup'),
   moveToDisplay: (displayId) => ipcRenderer.invoke('display:move', displayId),
 
+  // Auto-start
+  setAutoStart: (enabled) => ipcRenderer.invoke('app:set-autostart', enabled),
+  getAutoStart: () => ipcRenderer.invoke('app:get-autostart'),
+
   // Auto-updater
   getUpdateStatus: () => ipcRenderer.invoke('update:get-status'),
   installUpdate: () => ipcRenderer.invoke('update:install'),

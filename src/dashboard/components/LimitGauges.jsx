@@ -40,9 +40,9 @@ function LimitEditor({ label, currentValue, onSave, onCancel }) {
   )
 }
 
-function GaugeBar({ label, pct, current, limit, confidence, countdown, countdownLabel, color, onEditLimit, source }) {
+function GaugeBar({ label, pct, current, limit, confidence, countdown, countdownLabel, color, onEditLimit, source, warnPct, critPct }) {
   const remaining = useCountdown(countdown)
-  const barColor = getLimitColor(pct)
+  const barColor = getLimitColor(pct, warnPct, critPct)
   const isAuthoritative = source === 'claude-api'
   const isLowConfidence = !isAuthoritative && confidence < 0.3
   const pulse = pct >= 90
@@ -112,15 +112,19 @@ function GaugeBar({ label, pct, current, limit, confidence, countdown, countdown
 
       {/* Status text */}
       <div style={{ fontSize: 9, color: barColor, marginTop: 4, textAlign: 'right', fontFamily: FONT_MONO }}>
-        {pct >= 95 ? 'NEAR LIMIT!' : pct >= 80 ? 'APPROACHING LIMIT' : pct >= 60 ? 'MODERATE USAGE' : ''}
+        {pct >= critPct + 15 ? 'NEAR LIMIT!' : pct >= critPct ? 'APPROACHING LIMIT' : pct >= warnPct ? 'MODERATE USAGE' : ''}
         {isLowConfidence && ' (estimate)'}
       </div>
     </div>
   )
 }
 
-export default function LimitGauges({ session, weekly, onEditLimit }) {
+export default function LimitGauges({ session, weekly, thresholds, onEditLimit }) {
   const [editing, setEditing] = useState(null)
+  const sWarn = thresholds?.sessionWarnPct ?? 60
+  const sCrit = thresholds?.sessionCritPct ?? 80
+  const wWarn = thresholds?.weeklyWarnPct ?? 60
+  const wCrit = thresholds?.weeklyCritPct ?? 80
 
   const handleSave = (type, value) => {
     setEditing(null)
@@ -157,6 +161,8 @@ export default function LimitGauges({ session, weekly, onEditLimit }) {
           color="#38bdf8"
           onEditLimit={() => setEditing('session')}
           source={session.source}
+          warnPct={sWarn}
+          critPct={sCrit}
         />
         <GaugeBar
           label="Weekly Limit"
@@ -169,6 +175,8 @@ export default function LimitGauges({ session, weekly, onEditLimit }) {
           color="#34d399"
           onEditLimit={() => setEditing('weekly')}
           source={weekly.source}
+          warnPct={wWarn}
+          critPct={wCrit}
         />
       </div>
 

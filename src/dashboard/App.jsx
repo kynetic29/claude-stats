@@ -7,6 +7,7 @@ import WeeklyChart from './components/WeeklyChart'
 import SessionTable from './components/SessionTable'
 import LimitLearning from './components/LimitLearning'
 import UpdateToast from './components/UpdateToast'
+import SettingsModal from './components/SettingsModal'
 import { BG, DIM, FONT_SANS, FONT_MONO } from './theme'
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
   const [displayPickerOpen, setDisplayPickerOpen] = useState(false)
   const [displays, setDisplays] = useState([])
   const [movingDisplay, setMovingDisplay] = useState(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   async function openDisplayPicker() {
     const list = await window.electronAPI?.getDisplays()
@@ -44,8 +46,9 @@ export default function App() {
     )
   }
 
-  const { session, weekly, sessions, limits, dailyBreakdown, claudeApiError } = data
+  const { session, weekly, sessions, limits, dailyBreakdown, claudeApiError, thresholds } = data
   const isClaudeConnected = session.source === 'claude-api'
+  const t = thresholds || { sessionWarnPct: 60, sessionCritPct: 80, weeklyWarnPct: 60, weeklyCritPct: 80 }
 
   return (
     <div style={{
@@ -148,6 +151,19 @@ export default function App() {
             ⊞
           </button>
           <button
+            onClick={() => setSettingsOpen(true)}
+            title="Settings"
+            style={{
+              background: 'none', border: '1px solid #334155', borderRadius: 6,
+              color: '#64748b', cursor: 'pointer', padding: '4px 10px', fontSize: 11,
+              fontFamily: FONT_MONO,
+            }}
+            onMouseEnter={e => { e.target.style.borderColor = '#38bdf8'; e.target.style.color = '#38bdf8' }}
+            onMouseLeave={e => { e.target.style.borderColor = '#334155'; e.target.style.color = '#64748b' }}
+          >
+            ⚙
+          </button>
+          <button
             onClick={() => window.electronAPI?.resetSetup()}
             title="Reset Setup (Ctrl+Shift+R)"
             style={{
@@ -178,12 +194,12 @@ export default function App() {
 
       {/* Alert Banner */}
       <div style={{ flexShrink: 0, marginBottom: 6 }}>
-        <AlertBanner sessionPct={session.pct} weeklyPct={weekly.pct} />
+        <AlertBanner sessionPct={session.pct} weeklyPct={weekly.pct} thresholds={t} />
       </div>
 
       {/* Limit Gauges */}
       <div style={{ flexShrink: 0, marginBottom: 8 }}>
-        <LimitGauges session={session} weekly={weekly} />
+        <LimitGauges session={session} weekly={weekly} thresholds={t} />
       </div>
 
       {/* Stat Cards */}
@@ -208,6 +224,11 @@ export default function App() {
       <div style={{ flexShrink: 0, marginTop: 4, fontSize: 9, color: '#334155', textAlign: 'center', fontFamily: FONT_MONO }}>
         OTLP/HTTP · localhost:4318 · JSONL scanner active · Polling every 3s
       </div>
+
+      {/* Settings modal */}
+      {settingsOpen && (
+        <SettingsModal thresholds={t} onClose={() => setSettingsOpen(false)} />
+      )}
 
       {/* Display picker overlay */}
       {displayPickerOpen && (

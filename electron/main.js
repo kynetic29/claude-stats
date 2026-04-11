@@ -163,6 +163,14 @@ app.whenReady().then(async () => {
     openOnboarding()
   }
 
+  // Reconcile auto-start setting with OS
+  const { setAutoStart, getAutoStart } = require('./autostart')
+  const currentConfig = readConfig() || {}
+  const wantAutoStart = currentConfig.autoStart ?? false
+  if (getAutoStart() !== wantAutoStart) {
+    setAutoStart(wantAutoStart)
+  }
+
   // Start auto-updater (no-op in dev mode)
   const { initAutoUpdater } = require('./updater')
   initAutoUpdater()
@@ -207,6 +215,20 @@ app.on('will-quit', () => {
 
 ipcMain.handle('app:quit', () => app.quit())
 
+ipcMain.handle('app:set-autostart', (event, enabled) => {
+  const { setAutoStart } = require('./autostart')
+  const { readConfig, writeConfig } = require('./config')
+  setAutoStart(enabled)
+  const existing = readConfig() || {}
+  writeConfig({ ...existing, autoStart: enabled })
+  return { ok: true }
+})
+
+ipcMain.handle('app:get-autostart', () => {
+  const { getAutoStart } = require('./autostart')
+  return getAutoStart()
+})
+
 ipcMain.handle('update:get-status', () => {
   return require('./updater').getLastStatus()
 })
@@ -242,6 +264,12 @@ ipcMain.handle('data:get-dashboard', () => {
       require('./limit-estimator').getWeekStartTimestamp(resetDay, resetHour)
     ),
     claudeApiError: getPollError(),
+    thresholds: {
+      sessionWarnPct: config.sessionWarnPct ?? 60,
+      sessionCritPct: config.sessionCritPct ?? 80,
+      weeklyWarnPct: config.weeklyWarnPct ?? 60,
+      weeklyCritPct: config.weeklyCritPct ?? 80,
+    },
   }
 })
 

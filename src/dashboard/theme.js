@@ -29,9 +29,9 @@ export function getModelColor(model) {
   return BLUE
 }
 
-export function getLimitColor(pct) {
-  if (pct >= 90) return RED
-  if (pct >= 60) return YELLOW
+export function getLimitColor(pct, warnPct = 60, critPct = 80) {
+  if (pct >= critPct) return RED
+  if (pct >= warnPct) return YELLOW
   return GREEN
 }
 
