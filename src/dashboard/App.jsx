@@ -177,6 +177,19 @@ export default function App() {
             R
           </button>
           <button
+            onClick={() => window.electronAPI?.minimize()}
+            title="Minimize"
+            style={{
+              background: 'none', border: '1px solid #334155', borderRadius: 6,
+              color: '#64748b', cursor: 'pointer', padding: '4px 10px', fontSize: 11,
+              fontFamily: FONT_MONO,
+            }}
+            onMouseEnter={e => { e.target.style.borderColor = '#f59e0b'; e.target.style.color = '#f59e0b' }}
+            onMouseLeave={e => { e.target.style.borderColor = '#334155'; e.target.style.color = '#64748b' }}
+          >
+            −
+          </button>
+          <button
             onClick={() => window.electronAPI?.quit()}
             title="Exit (Ctrl+Shift+Q)"
             style={{

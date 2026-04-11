@@ -214,6 +214,9 @@ app.on('will-quit', () => {
 // ── IPC Handlers ─────────────────────────────────────────────────────────────
 
 ipcMain.handle('app:quit', () => app.quit())
+ipcMain.handle('app:minimize', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.minimize()
+})
 
 ipcMain.handle('app:set-autostart', (event, enabled) => {
   const { setAutoStart } = require('./autostart')
