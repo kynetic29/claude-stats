@@ -268,6 +268,7 @@ ipcMain.handle('data:get-dashboard', () => {
     dailyBreakdown: db.getDailyBreakdown(
       require('./limit-estimator').getWeekStartTimestamp(resetDay, resetHour)
     ),
+    modelBreakdown: db.getModelBreakdown(Date.now() - 5 * 60 * 60 * 1000),
     claudeApiError: getPollError(),
     thresholds: {
       sessionWarnPct: config.sessionWarnPct ?? 60,

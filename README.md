@@ -137,6 +137,39 @@ GitHub Actions builds the NSIS installer on `windows-latest` and publishes it to
 
 ---
 
+## FAQ
+
+**My dashboard shows 0% / no data even though I've been using Claude Code.**
+The JSONL scanner looks in `~/.claude/projects/`. If your shell home resolves differently or another ClaudeStats instance is already running, nothing gets picked up. Close any running instance before launching the dev build.
+
+**The OTLP receiver started on port 4319 instead of 4318.**
+Something else is holding 4318. ClaudeStats falls back automatically, but Claude Code's telemetry won't reach it unless you point it at 4319.
+
+**SmartScreen blocked the installer.**
+The installer is unsigned. Click **More info → Run anyway**. Auto-updates are verified against GitHub Releases and work normally after that.
+
+**My session percentage dropped suddenly without me doing anything.**
+Expected — the session limit is a rolling 5-hour window. As old requests age out, the percentage falls even without new activity.
+
+**ETA shows `—` even though I'm actively working.**
+ETA needs 15 minutes of recent request history to calculate a burn rate. It appears after your first ~15 minutes of sustained activity.
+
+**My percentage says X% but Claude Code isn't rate-limiting me.**
+You're using local estimates, which may not match Anthropic's actual limits. Connect your Claude.ai account (the **C** button) for live, authoritative data.
+
+**The C button shows a yellow `!`.**
+Your Claude.ai session expired. Click it to re-authenticate.
+
+**How do I move the dashboard to a different monitor?**
+Click **⊞** in the header. The choice persists across restarts.
+
+**How do I wipe everything and start fresh?**
+`Ctrl+Shift+R` (or the **R** button) clears config and relaunches setup. Usage history in the database is preserved.
+
+For deeper explanations of every tile and metric, see the [Dashboard Guide](documentation/dashboard-guide.md).
+
+---
+
 ## Tech stack
 
 - **Frontend:** React 18, Vite, Recharts — 100% inline styles with theme constants in `src/dashboard/theme.js`

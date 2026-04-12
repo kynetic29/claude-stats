@@ -9,6 +9,7 @@ import SessionTable from './components/SessionTable'
 import LimitLearning from './components/LimitLearning'
 import UpdateToast from './components/UpdateToast'
 import SettingsModal from './components/SettingsModal'
+import ModelBreakdown from './components/ModelBreakdown'
 import { BG, DIM, FONT_SANS, FONT_MONO } from './theme'
 
 // Font scale per layout variant — applied to root container so em-relative
@@ -59,7 +60,7 @@ export default function App() {
     )
   }
 
-  const { session, weekly, sessions, limits, dailyBreakdown, claudeApiError, thresholds } = data
+  const { session, weekly, sessions, limits, dailyBreakdown, modelBreakdown, claudeApiError, thresholds } = data
   const isClaudeConnected = session.source === 'claude-api'
   const t = thresholds || { sessionWarnPct: 60, sessionCritPct: 80, weeklyWarnPct: 60, weeklyCritPct: 80 }
 
@@ -67,8 +68,9 @@ export default function App() {
   const isSidebarLayout = layout === 'ultrawide' || layout === 'superwide'
 
   // Column sizing for main content grid (bottom area) in top-gauges layouts.
+  // standard gets a third column for model breakdown.
   const mainGridColumns = layout === 'tall' ? '1fr'
-    : layout === 'standard' ? '3fr 2fr'
+    : layout === 'standard' ? '3fr 2fr 1fr'
     : '1fr 1fr' // wide-2to1
 
   const headerEl = (
@@ -264,10 +266,13 @@ export default function App() {
             : `${sidebarWidth} 1fr`,
           gap: 10,
         }}>
-          {/* Left sidebar: stacked gauges + limit learning */}
+          {/* Left sidebar: stacked gauges + limit learning + model breakdown */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
             <LimitGauges session={session} weekly={weekly} thresholds={t} vertical />
             <LimitLearning limits={limits} />
+            <div style={{ flex: 1, minHeight: 0 }}>
+              <ModelBreakdown breakdown={modelBreakdown} />
+            </div>
           </div>
 
           {/* Main content: stat cards + chart & sessions */}
@@ -281,26 +286,9 @@ export default function App() {
             </div>
           </div>
 
-          {/* Reserved column (superwide only) — placeholder until Phase 5 */}
+          {/* Model breakdown column (superwide only) */}
           {layout === 'superwide' && (
-            <div style={{
-              display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0,
-              background: '#0f172a', borderRadius: 10, border: '1px solid #1e293b',
-              padding: '12px 14px',
-            }}>
-              <div style={{
-                fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
-                color: '#475569',
-              }}>
-                Model Breakdown
-              </div>
-              <div style={{
-                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#334155', fontFamily: FONT_MONO, fontSize: 11, textAlign: 'center',
-              }}>
-                Coming in<br />Phase 5
-              </div>
-            </div>
+            <ModelBreakdown breakdown={modelBreakdown} />
           )}
         </div>
 
@@ -366,7 +354,7 @@ export default function App() {
             </div>
           </>
         ) : (
-          // Two-column layout for standard / wide-2to1
+          // Two-column (wide-2to1) or three-column (standard) layout
           <>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
               <div style={{ flex: 1, minHeight: 0 }}>
@@ -377,6 +365,10 @@ export default function App() {
               </div>
             </div>
             <SessionTable sessions={sessions} />
+            {/* Third column: model breakdown (standard only) */}
+            {layout === 'standard' && (
+              <ModelBreakdown breakdown={modelBreakdown} />
+            )}
           </>
         )}
       </div>

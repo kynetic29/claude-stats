@@ -286,6 +286,21 @@ function getStmts() {
     pruneOldRequests: d.prepare(`
       DELETE FROM requests WHERE timestamp < ?
     `),
+
+    getModelBreakdown: d.prepare(`
+      SELECT
+        COALESCE(model, 'unknown') as model,
+        COALESCE(SUM(input_tokens + output_tokens + cache_creation_tokens), 0) as tokens,
+        COALESCE(SUM(input_tokens), 0) as input_tokens,
+        COALESCE(SUM(output_tokens), 0) as output_tokens,
+        COALESCE(SUM(cache_creation_tokens), 0) as cache_creation,
+        COUNT(*) as requests,
+        COALESCE(SUM(cost_usd), 0) as cost
+      FROM requests
+      WHERE timestamp >= ?
+      GROUP BY COALESCE(model, 'unknown')
+      ORDER BY tokens DESC
+    `),
   }
   return stmts
 }
@@ -419,6 +434,10 @@ function getDailySummaries(limit = 90) {
   }))
 }
 
+function getModelBreakdown(windowStartTimestamp) {
+  return getStmts().getModelBreakdown.all(windowStartTimestamp)
+}
+
 function pruneOldRequests(olderThanMs) {
   const cutoff = Date.now() - olderThanMs
   getStmts().pruneOldRequests.run(cutoff)
@@ -460,6 +479,7 @@ module.exports = {
   getAllConfig,
   upsertDailySummary,
   getDailySummaries,
+  getModelBreakdown,
   pruneOldRequests,
   close,
 }
