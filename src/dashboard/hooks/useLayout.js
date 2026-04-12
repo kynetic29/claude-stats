@@ -14,9 +14,8 @@ export function classifyLayout(ratio) {
 /**
  * Returns the active layout variant based on window aspect ratio.
  *
- * In dev mode (import.meta.env.DEV), Ctrl+Shift+K cycles through all
- * variants regardless of window size — useful for visual QA without
- * physically resizing to target aspect ratios.
+ * Ctrl+Shift+K cycles through all variants regardless of window size —
+ * useful for visual QA without physically resizing to target aspect ratios.
  *
  * @returns {{ layout: string, isDevOverride: boolean }}
  */
@@ -35,10 +34,8 @@ export function useLayout() {
     return () => window.removeEventListener('resize', onResize)
   }, [])
 
-  // Dev-only keyboard shortcut: Ctrl+Shift+K cycles layout variants
+  // Hidden keyboard shortcut: Ctrl+Shift+K cycles layout variants for visual QA
   useEffect(() => {
-    if (!import.meta.env.DEV) return
-
     function onKey(e) {
       if (e.ctrlKey && e.shiftKey && e.key === 'K') {
         setDevOverride(prev => {

@@ -1,6 +1,7 @@
 const { getWeeklyTokens, getLimitEstimates, getRequestCountWeek, getRequestCountToday } = require('./db')
 const { getWeekStartTimestamp, getTimeUntilWeeklyReset } = require('./limit-estimator')
 const { getLatestUsage } = require('./claude-usage-poller')
+const { computeBurnRate, computeEta } = require('./session-tracker')
 
 function getWeeklyStatus(resetDay = 1, resetHour = 6) {
   const weekStart = getWeekStartTimestamp(resetDay, resetHour)
@@ -13,9 +14,15 @@ function getWeeklyStatus(resetDay = 1, resetHour = 6) {
   const apiUsage = getLatestUsage()
   const hasApiData = apiUsage && apiUsage.seven_day != null
 
+  const burnRate = computeBurnRate()
+
   if (hasApiData) {
     const apiResetAt = new Date(apiUsage.seven_day.resets_at).getTime()
     const apiResetIn = Math.max(0, apiResetAt - Date.now())
+    const apiPct = apiUsage.seven_day.utilization
+
+    const derivedLimit = apiPct > 0 ? weekly.total_tokens * 100 / apiPct : 0
+    const eta = computeEta(weekly.total_tokens, derivedLimit, burnRate)
 
     return {
       tokens: weekly.total_tokens,
@@ -27,13 +34,15 @@ function getWeeklyStatus(resetDay = 1, resetHour = 6) {
       sessionCount: weekly.session_count,
       requestCountWeek: getRequestCountWeek(weekStart),
       requestCountToday: getRequestCountToday(todayStart.getTime()),
-      pct: apiUsage.seven_day.utilization,
+      pct: apiPct,
       estimatedLimit: null,
       confidence: 1.0,
       resetIn: apiResetIn,
       weekStart,
       source: 'claude-api',
       extraUsage: apiUsage.extra_usage || null,
+      eta,
+      etaApprox: false,
     }
   }
 
@@ -47,6 +56,8 @@ function getWeeklyStatus(resetDay = 1, resetHour = 6) {
   const pct = weeklyEstimate.estimated_limit > 0
     ? Math.min(100, (weekly.total_tokens / weeklyEstimate.estimated_limit) * 100)
     : 0
+
+  const eta = computeEta(weekly.total_tokens, weeklyEstimate.estimated_limit, burnRate)
 
   return {
     tokens: weekly.total_tokens,
@@ -65,6 +76,8 @@ function getWeeklyStatus(resetDay = 1, resetHour = 6) {
     weekStart,
     source: 'local',
     extraUsage: null,
+    eta,
+    etaApprox: true,
   }
 }
 

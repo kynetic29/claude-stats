@@ -40,7 +40,7 @@ function LimitEditor({ label, currentValue, onSave, onCancel }) {
   )
 }
 
-function GaugeBar({ label, pct, current, limit, confidence, countdown, countdownLabel, color, onEditLimit, source, warnPct, critPct }) {
+function GaugeBar({ label, pct, current, limit, confidence, countdown, countdownLabel, color, onEditLimit, source, warnPct, critPct, eta, etaApprox }) {
   const remaining = useCountdown(countdown)
   const barColor = getLimitColor(pct, warnPct, critPct)
   const isAuthoritative = source === 'claude-api'
@@ -92,6 +92,23 @@ function GaugeBar({ label, pct, current, limit, confidence, countdown, countdown
         )}
       </div>
 
+      {/* ETA projection */}
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 8 }}>
+        <span style={{ fontSize: 9, color: '#475569', fontFamily: FONT_MONO, letterSpacing: '0.06em' }}>ETA</span>
+        <span style={{
+          fontSize: 11, fontFamily: FONT_MONO,
+          color: eta === null ? '#334155' : etaApprox ? '#64748b' : DIM,
+        }}>
+          {eta === null
+            ? '—'
+            : `${etaApprox ? '~' : ''}${fmtCountdown(eta)}`
+          }
+        </span>
+        {etaApprox && eta !== null && (
+          <span style={{ fontSize: 8, color: '#334155', fontFamily: FONT_MONO }}>est.</span>
+        )}
+      </div>
+
       {/* Progress bar */}
       <div style={{ position: 'relative', height: 10, background: '#1e293b', borderRadius: 5, overflow: 'hidden' }}>
         {/* Uncertainty band for low confidence */}
@@ -119,7 +136,7 @@ function GaugeBar({ label, pct, current, limit, confidence, countdown, countdown
   )
 }
 
-export default function LimitGauges({ session, weekly, thresholds, onEditLimit, vertical = false }) {
+export default function LimitGauges({ session, weekly, thresholds, onEditLimit, vertical = false, }) {
   const [editing, setEditing] = useState(null)
   const sWarn = thresholds?.sessionWarnPct ?? 60
   const sCrit = thresholds?.sessionCritPct ?? 80
@@ -163,6 +180,8 @@ export default function LimitGauges({ session, weekly, thresholds, onEditLimit, 
           source={session.source}
           warnPct={sWarn}
           critPct={sCrit}
+          eta={session.eta ?? null}
+          etaApprox={session.etaApprox ?? true}
         />
         <GaugeBar
           label="Weekly Limit"
@@ -177,6 +196,8 @@ export default function LimitGauges({ session, weekly, thresholds, onEditLimit, 
           source={weekly.source}
           warnPct={wWarn}
           critPct={wCrit}
+          eta={weekly.eta ?? null}
+          etaApprox={weekly.etaApprox ?? true}
         />
       </div>
 

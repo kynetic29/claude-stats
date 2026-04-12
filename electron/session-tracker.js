@@ -2,6 +2,30 @@ const { getCurrentSession, getLimitEstimates, getEarliestRequestInWindow, getTok
 const { getLatestUsage } = require('./claude-usage-poller')
 
 const FIVE_HOURS_MS = 5 * 60 * 60 * 1000
+const BURN_WINDOW_MS = 15 * 60 * 1000 // 15-minute rolling window for burn rate
+
+/**
+ * Compute current token burn rate from the last 15 minutes of requests.
+ * Returns tokens per millisecond. Returns 0 if no recent activity (idle).
+ */
+function computeBurnRate(windowMs = BURN_WINDOW_MS) {
+  const windowStart = Date.now() - windowMs
+  const row = getTokensInWindow(windowStart)
+  const tokens = row.total_tokens || 0
+  if (tokens === 0) return 0
+  return tokens / windowMs
+}
+
+/**
+ * Given current tokens, a limit (or pct+tokens for API path), and a burn
+ * rate, compute ETA in ms until the limit is reached. Returns null if idle.
+ */
+function computeEta(currentTokens, limitTokens, burnRatePerMs) {
+  if (burnRatePerMs <= 0 || limitTokens <= 0) return null
+  const remaining = limitTokens - currentTokens
+  if (remaining <= 0) return 0
+  return remaining / burnRatePerMs
+}
 
 function getSessionStatus() {
   const session = getCurrentSession()
@@ -44,13 +68,22 @@ function getSessionStatus() {
       estimatedLimit: 250000,
       confidence: 0.1,
       source: 'local',
+      eta: null,
+      etaApprox: true,
     }
   }
+
+  const burnRate = computeBurnRate()
 
   if (hasApiData) {
     // Use authoritative data from claude.ai usage API
     const apiResetAt = new Date(apiUsage.five_hour.resets_at).getTime()
     const apiRemainingMs = Math.max(0, apiResetAt - Date.now())
+    const apiPct = apiUsage.five_hour.utilization
+
+    // Derive limit from API utilization percentage + local token count
+    const derivedLimit = apiPct > 0 ? totalTokens * 100 / apiPct : 0
+    const eta = computeEta(totalTokens, derivedLimit, burnRate)
 
     return {
       active: session ? session.is_active === 1 : false,
@@ -68,11 +101,13 @@ function getSessionStatus() {
       elapsedMs: earliestInWindow ? Date.now() - earliestInWindow : 0,
       remainingMs: apiRemainingMs,
       windowResetAt: apiResetAt,
-      pct: apiUsage.five_hour.utilization,
+      pct: apiPct,
       estimatedLimit: null,
       confidence: 1.0,
       cost: windowTokens.total_cost,
       source: 'claude-api',
+      eta,
+      etaApprox: false,
     }
   }
 
@@ -86,6 +121,8 @@ function getSessionStatus() {
   const pct = sessionEstimate.estimated_limit > 0
     ? Math.min(100, (totalTokens / sessionEstimate.estimated_limit) * 100)
     : 0
+
+  const eta = computeEta(totalTokens, sessionEstimate.estimated_limit, burnRate)
 
   return {
     active: session.is_active === 1,
@@ -108,7 +145,9 @@ function getSessionStatus() {
     confidence: sessionEstimate.confidence,
     cost: windowTokens.total_cost,
     source: 'local',
+    eta,
+    etaApprox: true,
   }
 }
 
-module.exports = { getSessionStatus }
+module.exports = { getSessionStatus, computeBurnRate, computeEta }
