@@ -4,58 +4,43 @@ import { CARD_BG, BORDER, FONT_MONO, EMERALD, BLUE, YELLOW, RED, DIM, TEXT } fro
 export default function UpdateToast() {
   const [status, setStatus] = useState({ state: 'idle' })
   const [currentVersion, setCurrentVersion] = useState(null)
-  const [showConfirm, setShowConfirm] = useState(false)
+  // null | 'confirm' | 'checking' | 'installing'
+  const [modalPhase, setModalPhase] = useState(null)
 
   useEffect(() => {
     const api = window.electronAPI
     if (!api) return
 
-    // Fetch current installed version once
     api.getAppVersion?.().then(v => setCurrentVersion(v)).catch(() => {})
-
-    // Prime current update state
     api.getUpdateStatus?.().then(setStatus).catch(() => {})
 
-    // Subscribe to live update events from the main process
     const unsubscribe = api.onUpdateStatus?.((s) => setStatus(s))
     return () => { if (unsubscribe) unsubscribe() }
   }, [])
 
-  if (!status || status.state === 'idle' || status.state === 'checking') {
-    return null
-  }
-
   const base = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 8,
-    padding: '4px 10px',
-    borderRadius: 6,
-    fontSize: 11,
-    fontFamily: FONT_MONO,
-    border: '1px solid',
-    lineHeight: 1,
+    display: 'inline-flex', alignItems: 'center', gap: 8,
+    padding: '4px 10px', borderRadius: 6, fontSize: 11,
+    fontFamily: FONT_MONO, border: '1px solid', lineHeight: 1,
   }
 
-  // Confirmation overlay — rendered as a fixed modal so it works regardless
-  // of where UpdateToast is placed in the header.
-  const confirmDialog = showConfirm && status.state === 'downloaded' ? (
+  // Modal is rendered at the top level so it survives status transitions
+  // (e.g. status → 'checking' while the confirm dialog is open).
+  const modal = modalPhase !== null ? (
     <div
       style={{
         position: 'fixed', inset: 0, zIndex: 200,
         background: 'rgba(0,0,0,0.65)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}
-      onClick={() => setShowConfirm(false)}
+      // Only allow backdrop-dismiss in the confirm phase
+      onClick={modalPhase === 'confirm' ? () => setModalPhase(null) : undefined}
     >
       <div
         onClick={e => e.stopPropagation()}
         style={{
-          background: CARD_BG,
-          border: `1px solid ${BORDER}`,
-          borderRadius: 12,
-          padding: '24px 28px',
-          width: 340,
+          background: CARD_BG, border: `1px solid ${BORDER}`,
+          borderRadius: 12, padding: '24px 28px', width: 340,
           fontFamily: FONT_MONO,
         }}
       >
@@ -64,84 +49,141 @@ export default function UpdateToast() {
           Install Update
         </div>
 
-        {/* Version pill */}
+        {/* Version pill — status.version updates live if a newer version is found */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 10,
           background: '#0f172a', borderRadius: 8,
           padding: '10px 14px', marginBottom: 16,
           border: `1px solid ${BORDER}`,
         }}>
-          <span style={{ color: DIM, fontSize: 12 }}>
-            v{currentVersion ?? '…'}
-          </span>
+          <span style={{ color: DIM, fontSize: 12 }}>v{currentVersion ?? '…'}</span>
           <span style={{ color: '#334155', fontSize: 11 }}>→</span>
-          <span style={{ color: EMERALD, fontSize: 12, fontWeight: 700 }}>
+          <span style={{
+            color: modalPhase === 'checking' ? YELLOW : EMERALD,
+            fontSize: 12, fontWeight: 700,
+          }}>
             v{status.version}
           </span>
-          <span style={{
-            marginLeft: 'auto', fontSize: 8, color: EMERALD, fontWeight: 700,
-            background: `${EMERALD}18`, padding: '2px 6px', borderRadius: 3,
-            border: `1px solid ${EMERALD}44`,
-          }}>
-            READY
-          </span>
+          {modalPhase === 'confirm' && (
+            <span style={{
+              marginLeft: 'auto', fontSize: 8, color: EMERALD, fontWeight: 700,
+              background: `${EMERALD}18`, padding: '2px 6px', borderRadius: 3,
+              border: `1px solid ${EMERALD}44`,
+            }}>READY</span>
+          )}
+          {modalPhase === 'checking' && (
+            <span style={{
+              marginLeft: 'auto', fontSize: 8, color: YELLOW, fontWeight: 700,
+              background: `${YELLOW}18`, padding: '2px 6px', borderRadius: 3,
+              border: `1px solid ${YELLOW}44`,
+            }}>CHECKING</span>
+          )}
+          {modalPhase === 'installing' && (
+            <span style={{
+              marginLeft: 'auto', fontSize: 8, color: BLUE, fontWeight: 700,
+              background: `${BLUE}18`, padding: '2px 6px', borderRadius: 3,
+              border: `1px solid ${BLUE}44`,
+            }}>INSTALLING</span>
+          )}
         </div>
 
         {/* Body */}
-        <div style={{ fontSize: 11, color: DIM, lineHeight: 1.6, marginBottom: 20 }}>
-          The update has already been downloaded. The app will restart to apply it.
-          Any in-progress work will be unaffected — ClaudeStats resumes automatically.
-        </div>
+        {modalPhase === 'confirm' && (
+          <div style={{ fontSize: 11, color: DIM, lineHeight: 1.6, marginBottom: 20 }}>
+            The update has already been downloaded. The app will restart to apply it.
+            Any in-progress work will be unaffected — ClaudeStats resumes automatically.
+          </div>
+        )}
+        {modalPhase === 'checking' && (
+          <div style={{ fontSize: 11, color: DIM, lineHeight: 1.6, marginBottom: 20 }}>
+            Checking for the latest version before restarting…
+          </div>
+        )}
+        {modalPhase === 'installing' && (
+          <div style={{ fontSize: 11, color: DIM, lineHeight: 1.6, marginBottom: 20 }}>
+            Installing and restarting…
+          </div>
+        )}
 
         {/* Actions */}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button
-            onClick={() => setShowConfirm(false)}
-            style={{
-              background: 'none', border: `1px solid ${BORDER}`, borderRadius: 6,
-              color: DIM, cursor: 'pointer', padding: '7px 16px', fontSize: 11,
-              fontFamily: FONT_MONO,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = '#475569' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER }}
-          >
-            Not now
-          </button>
-          <button
-            onClick={() => window.electronAPI?.installUpdate()}
-            style={{
-              background: EMERALD, border: 'none', borderRadius: 6,
-              color: '#060d1a', cursor: 'pointer', padding: '7px 16px',
-              fontSize: 11, fontWeight: 700, fontFamily: FONT_MONO,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.opacity = '0.85' }}
-            onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
-          >
-            Restart &amp; Update
-          </button>
-        </div>
+        {modalPhase === 'confirm' && (
+          <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => setModalPhase(null)}
+              style={{
+                background: 'none', border: `1px solid ${BORDER}`, borderRadius: 6,
+                color: DIM, cursor: 'pointer', padding: '7px 16px', fontSize: 11,
+                fontFamily: FONT_MONO,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#475569' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER }}
+            >
+              Not now
+            </button>
+            <button
+              onClick={async () => {
+                setModalPhase('checking')
+                await window.electronAPI?.installUpdate()
+                setModalPhase('installing')
+              }}
+              style={{
+                background: EMERALD, border: 'none', borderRadius: 6,
+                color: '#060d1a', cursor: 'pointer', padding: '7px 16px',
+                fontSize: 11, fontWeight: 700, fontFamily: FONT_MONO,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = '0.85' }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = '1' }}
+            >
+              Restart &amp; Update
+            </button>
+          </div>
+        )}
+        {(modalPhase === 'checking' || modalPhase === 'installing') && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: 8, color: DIM, fontSize: 11,
+          }}>
+            <span style={{
+              width: 6, height: 6, borderRadius: '50%',
+              background: modalPhase === 'checking' ? YELLOW : BLUE,
+              animation: 'pulse 1.5s ease-in-out infinite',
+            }} />
+            {modalPhase === 'checking' ? 'Please wait…' : 'Restarting…'}
+          </div>
+        )}
       </div>
     </div>
   ) : null
 
+  // Keep rendering if modal is open, even if status transitions away from 'downloaded'
+  if ((!status || status.state === 'idle' || status.state === 'checking') && modalPhase === null) {
+    return null
+  }
+
   if (status.state === 'available') {
     return (
-      <div style={{ ...base, borderColor: BLUE, color: BLUE }} title={`Downloading v${status.version}…`}>
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: BLUE }} />
-        update available
-      </div>
+      <>
+        {modal}
+        <div style={{ ...base, borderColor: BLUE, color: BLUE }} title={`Downloading v${status.version}…`}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: BLUE }} />
+          update available
+        </div>
+      </>
     )
   }
 
   if (status.state === 'downloading') {
     return (
-      <div style={{ ...base, borderColor: BLUE, color: BLUE }}>
-        <span style={{
-          width: 6, height: 6, borderRadius: '50%', background: BLUE,
-          animation: 'pulse 1.5s ease-in-out infinite',
-        }} />
-        downloading {status.percent ?? 0}%
-      </div>
+      <>
+        {modal}
+        <div style={{ ...base, borderColor: BLUE, color: BLUE }}>
+          <span style={{
+            width: 6, height: 6, borderRadius: '50%', background: BLUE,
+            animation: 'pulse 1.5s ease-in-out infinite',
+          }} />
+          downloading {status.percent ?? 0}%
+        </div>
+      </>
     )
   }
 
@@ -152,16 +194,13 @@ export default function UpdateToast() {
 
     return (
       <>
-        {confirmDialog}
+        {modal}
         <button
-          onClick={() => setShowConfirm(true)}
+          onClick={() => setModalPhase('confirm')}
           title="Click to review and install update"
           style={{
-            ...base,
-            borderColor: EMERALD,
-            color: EMERALD,
-            background: 'none',
-            cursor: 'pointer',
+            ...base, borderColor: EMERALD, color: EMERALD,
+            background: 'none', cursor: 'pointer',
           }}
           onMouseEnter={e => { e.currentTarget.style.background = `${EMERALD}14` }}
           onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
@@ -178,15 +217,19 @@ export default function UpdateToast() {
 
   if (status.state === 'error') {
     return (
-      <div
-        style={{ ...base, borderColor: RED, color: RED, opacity: 0.7 }}
-        title={status.message || 'Update error'}
-      >
-        <span style={{ width: 6, height: 6, borderRadius: '50%', background: RED }} />
-        update error
-      </div>
+      <>
+        {modal}
+        <div
+          style={{ ...base, borderColor: RED, color: RED, opacity: 0.7 }}
+          title={status.message || 'Update error'}
+        >
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: RED }} />
+          update error
+        </div>
+      </>
     )
   }
 
-  return null
+  // Fallback: modal may still be open while status is in transition
+  return modal
 }

@@ -238,8 +238,8 @@ ipcMain.handle('update:get-status', () => {
   return require('./updater').getLastStatus()
 })
 
-ipcMain.handle('update:install', () => {
-  require('./updater').quitAndInstall()
+ipcMain.handle('update:install', async () => {
+  await require('./updater').checkAndInstall()
   return { ok: true }
 })
 

@@ -84,4 +84,42 @@ function quitAndInstall() {
   autoUpdater.quitAndInstall()
 }
 
-module.exports = { initAutoUpdater, getLastStatus, quitAndInstall }
+const PRE_INSTALL_TIMEOUT_MS = 10_000
+
+// Check for a newer version before installing. If one downloads within the
+// timeout window, quitAndInstall() will use it automatically (electron-updater
+// replaces the staged installer). On timeout or error, falls through to the
+// already-staged installer so the user is never blocked.
+function checkAndInstall() {
+  return new Promise((resolve) => {
+    let settled = false
+    const finish = () => {
+      if (settled) return
+      settled = true
+      autoUpdater.quitAndInstall()
+      resolve()
+    }
+
+    const timer = setTimeout(finish, PRE_INSTALL_TIMEOUT_MS)
+
+    // Newer version found and fully downloaded — install that one instead
+    autoUpdater.once('update-downloaded', () => {
+      clearTimeout(timer)
+      finish()
+    })
+
+    // Already on the latest staged version — install immediately
+    autoUpdater.once('update-not-available', () => {
+      clearTimeout(timer)
+      finish()
+    })
+
+    autoUpdater.checkForUpdates().catch((err) => {
+      console.error('[updater] pre-install check failed:', err?.message || err)
+      clearTimeout(timer)
+      finish()
+    })
+  })
+}
+
+module.exports = { initAutoUpdater, getLastStatus, quitAndInstall, checkAndInstall }
