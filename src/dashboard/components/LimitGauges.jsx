@@ -119,7 +119,7 @@ function GaugeBar({ label, pct, current, limit, confidence, countdown, countdown
   )
 }
 
-export default function LimitGauges({ session, weekly, thresholds, onEditLimit }) {
+export default function LimitGauges({ session, weekly, thresholds, onEditLimit, vertical = false }) {
   const [editing, setEditing] = useState(null)
   const sWarn = thresholds?.sessionWarnPct ?? 60
   const sCrit = thresholds?.sessionCritPct ?? 80
@@ -149,7 +149,7 @@ export default function LimitGauges({ session, weekly, thresholds, onEditLimit }
           50% { opacity: 0.7; }
         }
       `}</style>
-      <div style={{ display: 'flex', gap: 12 }}>
+      <div style={{ display: 'flex', flexDirection: vertical ? 'column' : 'row', gap: 12 }}>
         <GaugeBar
           label="Session Limit"
           pct={session.pct}

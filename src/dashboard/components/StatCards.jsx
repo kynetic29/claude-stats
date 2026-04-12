@@ -18,9 +18,9 @@ function StatCard({ label, value, sub, color }) {
   )
 }
 
-export default function StatCards({ session, weekly }) {
+export default function StatCards({ session, weekly, wrap = false }) {
   return (
-    <div style={{ display: 'flex', gap: 8 }}>
+    <div style={{ display: 'flex', gap: 8, flexWrap: wrap ? 'wrap' : 'nowrap' }}>
       <StatCard
         label="Session Tokens"
         value={fmtTokens(session.tokens)}

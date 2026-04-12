@@ -232,6 +232,8 @@ ipcMain.handle('app:get-autostart', () => {
   return getAutoStart()
 })
 
+ipcMain.handle('app:get-version', () => app.getVersion())
+
 ipcMain.handle('update:get-status', () => {
   return require('./updater').getLastStatus()
 })

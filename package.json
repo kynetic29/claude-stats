@@ -1,6 +1,6 @@
 {
   "name": "claude-stats",
-  "version": "0.4.2",
+  "version": "0.5.1",
   "description": "Real-time Claude Code usage dashboard for dedicated monitors",
   "author": "kynetic29",
   "main": "electron/main.js",
@@ -13,7 +13,8 @@
     "release": "vite build && electron-builder --publish always",
     "start": "electron .",
     "rebuild": "electron-rebuild -f -w better-sqlite3",
-    "postinstall": "electron-rebuild -f -w better-sqlite3"
+    "postinstall": "electron-rebuild -f -w better-sqlite3",
+    "test": "vitest run"
   },
   "dependencies": {
     "better-sqlite3": "^12.8.0",
@@ -29,6 +30,7 @@
     "electron": "^41.1.1",
     "electron-builder": "^26.8.1",
     "vite": "^8.0.5",
+    "vitest": "^3.2.4",
     "wait-on": "^8.0.0"
   },
   "build": {

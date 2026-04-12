@@ -34,6 +34,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   setAutoStart: (enabled) => ipcRenderer.invoke('app:set-autostart', enabled),
   getAutoStart: () => ipcRenderer.invoke('app:get-autostart'),
 
+  // App info
+  getAppVersion: () => ipcRenderer.invoke('app:get-version'),
+
   // Auto-updater
   getUpdateStatus: () => ipcRenderer.invoke('update:get-status'),
   installUpdate: () => ipcRenderer.invoke('update:install'),

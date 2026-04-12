@@ -1,7 +1,7 @@
 const { app, BrowserWindow } = require('electron')
 const { autoUpdater } = require('electron-updater')
 
-const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000 // 6 hours
+const CHECK_INTERVAL_MS = 30 * 60 * 1000 // 30 minutes
 
 let initialized = false
 let lastStatus = { state: 'idle' }
