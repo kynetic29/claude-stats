@@ -364,7 +364,15 @@ export default function App() {
                 <LimitLearning limits={limits} />
               </div>
             </div>
-            <SessionTable sessions={sessions} />
+            {/* Right column: sessions + model breakdown stacked */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
+              <div style={{ flex: 1, minHeight: 0 }}>
+                <SessionTable sessions={sessions} />
+              </div>
+              <div style={{ flexShrink: 0, height: 200 }}>
+                <ModelBreakdown breakdown={modelBreakdown} />
+              </div>
+            </div>
             {/* Third column: model breakdown (standard only) */}
             {layout === 'standard' && (
               <ModelBreakdown breakdown={modelBreakdown} />
