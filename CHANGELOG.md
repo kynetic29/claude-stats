@@ -4,6 +4,37 @@ All notable changes to ClaudeStats are documented here.
 
 ---
 
+## [1.0.0] — 2026-04-12
+
+First stable release. All seven planned phases complete.
+
+### Summary of what's included
+- Full auto-update pipeline (silent NSIS, GitHub Actions)
+- Configurable thresholds and launch-on-startup
+- Responsive layout across 5 aspect ratios
+- Time-to-limit ETA projections
+- Model breakdown donut chart
+- CSV/JSON data export
+- Historical analysis window (daily/weekly/monthly charts)
+- Pre-install version check (always installs the latest available build)
+
+---
+
+## [0.9.2] — 2026-04-12
+
+### Fixed
+- **Pre-install version check** — before calling `quitAndInstall()`, a fresh `checkForUpdates()` is triggered with a 10-second timeout. If a newer version was published between download and confirmation, it downloads and installs automatically. Falls through to the staged installer on timeout/error — user is never blocked.
+- **Update modal survives status transitions** — the confirm modal was previously rendered inside the `status.state === 'downloaded'` branch, causing it to close when status changed to `'checking'` mid-flow. Modal is now rendered at the top level, controlled by `modalPhase` state (`confirm` → `checking` → `installing`).
+
+---
+
+## [0.9.1] — 2026-04-12
+
+### Fixed
+- **Silent NSIS updates** — `oneClick: false` in the NSIS config was causing the full installer wizard (with per-user/all-users choice) to appear on every update. Set to `oneClick: true` so updates install silently to `%LOCALAPPDATA%\Programs\ClaudeStats` with no UI.
+
+---
+
 ## [0.9.0] — 2026-04-12
 
 ### Added
