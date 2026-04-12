@@ -37,6 +37,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // App info
   getAppVersion: () => ipcRenderer.invoke('app:get-version'),
 
+  // History window
+  openHistory: () => ipcRenderer.invoke('history:open'),
+  historyGetDaily: (opts) => ipcRenderer.invoke('history:get-daily', opts),
+  historyGetWeekly: (opts) => ipcRenderer.invoke('history:get-weekly', opts),
+  historyGetMonthly: (opts) => ipcRenderer.invoke('history:get-monthly', opts),
+  historyGetModels: () => ipcRenderer.invoke('history:get-models'),
+
   // Data export
   exportData: (options) => ipcRenderer.invoke('data:export', options),
 

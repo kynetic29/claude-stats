@@ -398,6 +398,47 @@ ipcMain.handle('auth:status', async () => {
   }
 })
 
+ipcMain.handle('history:open', () => {
+  const existing = BrowserWindow.getAllWindows().find(w => w.getTitle() === 'ClaudeStats — History')
+  if (existing) {
+    existing.focus()
+    return
+  }
+  const win = new BrowserWindow({
+    width: 1100,
+    height: 720,
+    minWidth: 800,
+    minHeight: 500,
+    title: 'ClaudeStats — History',
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  })
+  win.loadFile(path.join(__dirname, '../dist/src/history/index.html'))
+})
+
+ipcMain.handle('history:get-daily', (event, { days, model }) => {
+  const { getDailyTrendByModel } = require('./history-queries')
+  return getDailyTrendByModel(days, model || null)
+})
+
+ipcMain.handle('history:get-weekly', (event, { weeks }) => {
+  const { getWeekOverWeek } = require('./history-queries')
+  return getWeekOverWeek(weeks)
+})
+
+ipcMain.handle('history:get-monthly', (event, { months }) => {
+  const { getMonthlySummary } = require('./history-queries')
+  return getMonthlySummary(months)
+})
+
+ipcMain.handle('history:get-models', () => {
+  const { getDistinctModels } = require('./history-queries')
+  return getDistinctModels()
+})
+
 ipcMain.handle('data:export', async (event, options) => {
   const { exportData } = require('./exporter')
   return exportData(options)

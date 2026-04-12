@@ -136,6 +136,19 @@ export default function App() {
           </button>
         )}
         <button
+          onClick={() => window.electronAPI?.openHistory()}
+          title="History & Analysis"
+          style={{
+            background: 'none', border: '1px solid #334155', borderRadius: 6,
+            color: '#64748b', cursor: 'pointer', padding: '4px 10px', fontSize: 11,
+            fontFamily: FONT_MONO,
+          }}
+          onMouseEnter={e => { e.target.style.borderColor = '#c084fc'; e.target.style.color = '#c084fc' }}
+          onMouseLeave={e => { e.target.style.borderColor = '#334155'; e.target.style.color = '#64748b' }}
+        >
+          ⌛
+        </button>
+        <button
           onClick={() => window.electronAPI?.recordLimitHit('session')}
           title="Record Limit Hit (Ctrl+Shift+L)"
           style={{

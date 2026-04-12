@@ -9,6 +9,7 @@ export default defineConfig({
       input: {
         dashboard: 'src/dashboard/index.html',
         onboarding: 'src/onboarding/index.html',
+        history: 'src/history/index.html',
       },
     },
     outDir: 'dist',
