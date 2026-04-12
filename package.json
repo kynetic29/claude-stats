@@ -1,6 +1,6 @@
 {
   "name": "claude-stats",
-  "version": "0.7.0",
+  "version": "0.7.2",
   "description": "Real-time Claude Code usage dashboard for dedicated monitors",
   "author": "kynetic29",
   "main": "electron/main.js",

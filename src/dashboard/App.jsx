@@ -266,13 +266,15 @@ export default function App() {
             : `${sidebarWidth} 1fr`,
           gap: 10,
         }}>
-          {/* Left sidebar: stacked gauges + limit learning + model breakdown */}
+          {/* Left sidebar: stacked gauges + limit learning + model breakdown (ultrawide only) */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
             <LimitGauges session={session} weekly={weekly} thresholds={t} vertical />
             <LimitLearning limits={limits} />
-            <div style={{ flex: 1, minHeight: 0 }}>
-              <ModelBreakdown breakdown={modelBreakdown} />
-            </div>
+            {layout === 'ultrawide' && (
+              <div style={{ flex: 1, minHeight: 0 }}>
+                <ModelBreakdown breakdown={modelBreakdown} />
+              </div>
+            )}
           </div>
 
           {/* Main content: stat cards + chart & sessions */}
@@ -364,14 +366,16 @@ export default function App() {
                 <LimitLearning limits={limits} />
               </div>
             </div>
-            {/* Right column: sessions + model breakdown stacked */}
+            {/* Right column: sessions + model breakdown stacked (wide-2to1 only) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
               <div style={{ flex: 1, minHeight: 0 }}>
                 <SessionTable sessions={sessions} />
               </div>
-              <div style={{ flexShrink: 0, height: 200 }}>
-                <ModelBreakdown breakdown={modelBreakdown} />
-              </div>
+              {layout === 'wide-2to1' && (
+                <div style={{ flexShrink: 0, height: 200 }}>
+                  <ModelBreakdown breakdown={modelBreakdown} />
+                </div>
+              )}
             </div>
             {/* Third column: model breakdown (standard only) */}
             {layout === 'standard' && (
