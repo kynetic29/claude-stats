@@ -9,14 +9,36 @@ const SCAN_INTERVAL = 10000 // 10 seconds
 let scanTimer = null
 let watchers = []
 
-// Decode project directory name to readable path
-// D--CodingProjects-foo → D:\CodingProjects\foo
+// Decode project directory name to readable path.
+// Claude Code encodes paths as: drive letter + '--' + path-with-dashes-as-separators
+// e.g. d--CodingProjects-claude-stats → D:\CodingProjects\claude-stats
+//
+// Naive replace(/-/g, '\\') is wrong when folder names contain hyphens.
+// Instead, walk the filesystem greedily: accumulate segments, committing each
+// time the accumulated string exists on disk as a real directory.
 function decodeProjectName(dirName) {
   const match = dirName.match(/^([a-zA-Z])--(.*)$/)
   if (!match) return dirName
   const drive = match[1].toUpperCase()
-  const rest = match[2].replace(/-/g, '\\')
-  return `${drive}:\\${rest}`
+  const encoded = match[2]
+
+  const parts = encoded.split('-')
+  let resolved = `${drive}:\\`
+  let pending = ''
+
+  for (const part of parts) {
+    pending = pending ? `${pending}-${part}` : part
+    const candidate = path.join(resolved, pending)
+    if (fs.existsSync(candidate)) {
+      resolved = candidate
+      pending = ''
+    }
+  }
+
+  // If anything remains unmatched (e.g. the project was deleted), append as-is
+  if (pending) resolved = path.join(resolved, pending)
+
+  return resolved
 }
 
 // Parse a JSONL file from a given byte offset, returning new requests
@@ -118,6 +140,40 @@ function estimateCost(req) {
   )
 }
 
+// Fix previously mis-decoded project paths already stored in the DB.
+// Runs once on startup: re-derives the correct project name for each
+// project directory and patches requests + sessions rows where it differs.
+function fixStoredProjectPaths() {
+  if (!fs.existsSync(CLAUDE_DIR)) return
+
+  const { getDb } = require('./db')
+  const db = getDb()
+
+  const updateRequests = db.prepare(`UPDATE requests SET project = ? WHERE project = ?`)
+  const updateSessions = db.prepare(`UPDATE sessions SET project = ? WHERE project = ?`)
+
+  const projectDirs = fs.readdirSync(CLAUDE_DIR, { withFileTypes: true })
+    .filter(d => d.isDirectory())
+
+  for (const projectDir of projectDirs) {
+    const correct = decodeProjectName(projectDir.name)
+    // The old (broken) name replaced ALL dashes with backslashes
+    const broken = (() => {
+      const m = projectDir.name.match(/^([a-zA-Z])--(.*)$/)
+      if (!m) return null
+      return `${m[1].toUpperCase()}:\\${m[2].replace(/-/g, '\\')}`
+    })()
+
+    if (broken && broken !== correct) {
+      const r = updateRequests.run(correct, broken)
+      const s = updateSessions.run(correct, broken)
+      if (r.changes > 0 || s.changes > 0) {
+        console.log(`[jsonl-scanner] Fixed project path: "${broken}" → "${correct}" (${r.changes} requests, ${s.changes} sessions)`)
+      }
+    }
+  }
+}
+
 // Recursively find all .jsonl files under a directory
 function findJsonlFiles(dir) {
   const results = []
@@ -186,6 +242,9 @@ function scanAll() {
 
 // Start watching for changes and scanning periodically
 function startScanner() {
+  // Fix any mis-decoded project paths from previous versions
+  fixStoredProjectPaths()
+
   // Initial full scan (backfill)
   console.log('[jsonl-scanner] Starting initial scan...')
   scanAll()
