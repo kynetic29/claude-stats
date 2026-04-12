@@ -34,7 +34,7 @@ This is a one-time step. Auto-updates delivered through the in-app updater are v
 
 ### Does this work on Mac or Linux?
 
-Not currently. The installer is built as an NSIS executable (Windows-only), and `electron-updater` requires NSIS for auto-update support. Mac and Linux would need separate build targets and are not planned at this time.
+Not currently. The installer is built as an NSIS executable (Windows-only), and `electron-updater` requires NSIS for auto-update support. Mac and Linux would need separate build targets and are planned for a future release.
 
 ---
 
