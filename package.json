@@ -1,6 +1,6 @@
 {
   "name": "claude-stats",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Real-time Claude Code usage dashboard for dedicated monitors",
   "author": "kynetic29",
   "main": "electron/main.js",
@@ -55,9 +55,9 @@
       "target": "nsis"
     },
     "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "perMachine": false
+      "oneClick": true,
+      "perMachine": false,
+      "installerHeaderIcon": false
     },
     "mac": {
       "target": "dmg"
