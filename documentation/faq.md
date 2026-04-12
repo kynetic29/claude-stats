@@ -101,6 +101,33 @@ Open Settings (**⚙**) and enable **Launch on login**. This registers ClaudeSta
 
 ---
 
+### How do I open the historical analysis view?
+
+Click the **⌛** button in the dashboard header. This opens a separate resizable window showing three views:
+
+- **Daily Trend** — area chart of token or cost usage per day, with a model filter and range selector (7 / 14 / 30 / 60 / 90 days).
+- **Week over Week** — bar chart of weekly totals for the last 4 / 8 / 12 / 26 weeks.
+- **Monthly Summary** — table of monthly totals with an inline token bar chart, input, output, cost, and request count columns.
+
+The history window opens independently and does not disturb the dashboard on your dedicated display. You can have both open at the same time.
+
+---
+
+### How do I export my usage data?
+
+Click **⚙** to open Settings, then scroll to the **Export Data** section.
+
+- **Format:** CSV or JSON.
+- **Scope:** Sessions (one row per session), Requests (one row per individual API call), or All.
+- Click **Export…** — a save dialog lets you choose the destination.
+
+**Notes:**
+- CSV + All scope exports sessions only. Export requests separately to get the full per-request log, since CSV cannot natively represent two tables in one file.
+- JSON is pretty-printed and suitable for processing with tools like `jq`.
+- The same export controls are also available at the bottom of the History window.
+
+---
+
 ### How do I reset everything and start fresh?
 
 Press `Ctrl+Shift+R` or click the **R** button in the header. This clears the saved configuration (display choice, API keys, thresholds) and relaunches the setup wizard. Your **usage history** stored in the SQLite database is preserved — only the config is cleared.
