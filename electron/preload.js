@@ -37,6 +37,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // App info
   getAppVersion: () => ipcRenderer.invoke('app:get-version'),
 
+  // Data export
+  exportData: (options) => ipcRenderer.invoke('data:export', options),
+
   // Auto-updater
   getUpdateStatus: () => ipcRenderer.invoke('update:get-status'),
   installUpdate: () => ipcRenderer.invoke('update:install'),

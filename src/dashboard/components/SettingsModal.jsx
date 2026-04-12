@@ -30,6 +30,25 @@ export default function SettingsModal({ thresholds, onClose }) {
   const [autoStart, setAutoStart] = useState(false)
   const [saving, setSaving] = useState(false)
 
+  // Export state
+  const [exportFormat, setExportFormat] = useState('csv')
+  const [exportScope, setExportScope] = useState('sessions')
+  const [exporting, setExporting] = useState(false)
+  const [exportResult, setExportResult] = useState(null) // { ok, filePath?, reason? }
+
+  async function handleExport() {
+    setExporting(true)
+    setExportResult(null)
+    try {
+      const result = await window.electronAPI?.exportData({ format: exportFormat, scope: exportScope })
+      setExportResult(result)
+    } catch (e) {
+      setExportResult({ ok: false, reason: e.message })
+    } finally {
+      setExporting(false)
+    }
+  }
+
   useEffect(() => {
     window.electronAPI?.getAutoStart().then(v => setAutoStart(!!v)).catch(() => {})
   }, [])
@@ -108,8 +127,91 @@ export default function SettingsModal({ thresholds, onClose }) {
           Automatically open ClaudeStats when Windows starts
         </div>
 
+        <div style={{ borderTop: `1px solid ${BORDER}`, margin: '14px 0 12px' }} />
+
+        {/* Export */}
+        <div style={{ fontSize: 11, color: DIM, letterSpacing: '0.06em', marginBottom: 10, textTransform: 'uppercase' }}>
+          Export Data
+        </div>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+          {/* Format picker */}
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>Format</div>
+            <div style={{ display: 'flex', gap: 2 }}>
+              {['csv', 'json'].map(f => (
+                <button
+                  key={f}
+                  onClick={() => { setExportFormat(f); setExportResult(null) }}
+                  style={{
+                    flex: 1,
+                    background: exportFormat === f ? '#1e293b' : 'none',
+                    border: `1px solid ${exportFormat === f ? '#334155' : BORDER}`,
+                    borderRadius: 5, color: exportFormat === f ? '#e2e8f0' : DIM,
+                    cursor: 'pointer', padding: '5px 0', fontSize: 11,
+                    fontFamily: FONT_MONO, textTransform: 'uppercase',
+                  }}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+          {/* Scope picker */}
+          <div style={{ flex: 2 }}>
+            <div style={{ fontSize: 10, color: '#475569', marginBottom: 4 }}>Scope</div>
+            <div style={{ display: 'flex', gap: 2 }}>
+              {['sessions', 'requests', 'all'].map(s => (
+                <button
+                  key={s}
+                  onClick={() => { setExportScope(s); setExportResult(null) }}
+                  style={{
+                    flex: 1,
+                    background: exportScope === s ? '#1e293b' : 'none',
+                    border: `1px solid ${exportScope === s ? '#334155' : BORDER}`,
+                    borderRadius: 5, color: exportScope === s ? '#e2e8f0' : DIM,
+                    cursor: 'pointer', padding: '5px 0', fontSize: 10,
+                    fontFamily: FONT_MONO,
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            style={{
+              background: 'none', border: `1px solid ${BORDER}`, borderRadius: 6,
+              color: exporting ? DIM : '#e2e8f0', cursor: exporting ? 'wait' : 'pointer',
+              padding: '6px 14px', fontSize: 11, fontFamily: FONT_MONO,
+              opacity: exporting ? 0.6 : 1,
+            }}
+          >
+            {exporting ? 'Saving…' : 'Export…'}
+          </button>
+          {exportResult && (
+            <span style={{
+              fontSize: 10, fontFamily: FONT_MONO,
+              color: exportResult.ok ? '#22c55e' : '#ef4444',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {exportResult.ok
+                ? `Saved`
+                : exportResult.reason === 'canceled' ? 'Canceled' : `Error: ${exportResult.reason}`}
+            </span>
+          )}
+        </div>
+        {exportFormat === 'csv' && exportScope === 'all' && (
+          <div style={{ fontSize: 10, color: '#475569', marginBottom: 8 }}>
+            CSV + All scope exports sessions only. Export requests separately for the full request log.
+          </div>
+        )}
+
         {/* Actions */}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
           <button
             onClick={onClose}
             style={{

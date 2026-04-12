@@ -398,6 +398,11 @@ ipcMain.handle('auth:status', async () => {
   }
 })
 
+ipcMain.handle('data:export', async (event, options) => {
+  const { exportData } = require('./exporter')
+  return exportData(options)
+})
+
 ipcMain.handle('auth:logout', async () => {
   const { clearAuth } = require('./claude-auth')
   const { stopPolling } = require('./claude-usage-poller')
