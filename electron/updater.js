@@ -1,5 +1,4 @@
 const { app, BrowserWindow } = require('electron')
-const { autoUpdater } = require('electron-updater')
 
 const CHECK_INTERVAL_MS = 30 * 60 * 1000 // 30 minutes
 
@@ -22,6 +21,9 @@ function initAutoUpdater() {
     return
   }
   initialized = true
+
+  // Deferred require — electron-updater is only available in packaged builds
+  const { autoUpdater } = require('electron-updater')
 
   autoUpdater.autoDownload = true
   autoUpdater.autoInstallOnAppQuit = true
@@ -81,6 +83,7 @@ function getLastStatus() {
 }
 
 function quitAndInstall() {
+  const { autoUpdater } = require('electron-updater')
   autoUpdater.quitAndInstall()
 }
 
@@ -91,6 +94,7 @@ const PRE_INSTALL_TIMEOUT_MS = 10_000
 // replaces the staged installer). On timeout or error, falls through to the
 // already-staged installer so the user is never blocked.
 function checkAndInstall() {
+  const { autoUpdater } = require('electron-updater')
   return new Promise((resolve) => {
     let settled = false
     const finish = () => {
