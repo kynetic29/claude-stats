@@ -252,7 +252,7 @@ ipcMain.handle('app:reset-setup', () => {
 ipcMain.handle('data:get-dashboard', () => {
   const { getSessionStatus } = require('./session-tracker')
   const { getWeeklyStatus } = require('./weekly-tracker')
-  const { getPollError } = require('./claude-usage-poller')
+  const { getPollError, getLatestUsage } = require('./claude-usage-poller')
   const { readConfig } = require('./config')
   const db = require('./db')
 
@@ -270,6 +270,7 @@ ipcMain.handle('data:get-dashboard', () => {
     ),
     modelBreakdown: db.getModelBreakdown(Date.now() - 5 * 60 * 60 * 1000),
     claudeApiError: getPollError(),
+    extraUsage: getLatestUsage()?.extra_usage || null,
     thresholds: {
       sessionWarnPct: config.sessionWarnPct ?? 60,
       sessionCritPct: config.sessionCritPct ?? 80,

@@ -60,7 +60,7 @@ export default function App() {
     )
   }
 
-  const { session, weekly, sessions, limits, dailyBreakdown, modelBreakdown, claudeApiError, thresholds } = data
+  const { session, weekly, sessions, limits, dailyBreakdown, modelBreakdown, claudeApiError, thresholds, extraUsage } = data
   const isClaudeConnected = session.source === 'claude-api'
   const t = thresholds || { sessionWarnPct: 60, sessionCritPct: 80, weeklyWarnPct: 60, weeklyCritPct: 80 }
 
@@ -293,7 +293,7 @@ export default function App() {
           {/* Main content: stat cards + chart & sessions */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minHeight: 0 }}>
             <div style={{ flexShrink: 0 }}>
-              <StatCards session={session} weekly={weekly} />
+              <StatCards session={session} weekly={weekly} extraUsage={extraUsage} />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, flex: 1, minHeight: 0 }}>
               <WeeklyChart dailyBreakdown={dailyBreakdown} />
@@ -346,7 +346,7 @@ export default function App() {
 
       {/* Stat Cards */}
       <div style={{ flexShrink: 0, marginBottom: 8 }}>
-        <StatCards session={session} weekly={weekly} wrap={layout === 'tall'} />
+        <StatCards session={session} weekly={weekly} extraUsage={extraUsage} wrap={layout === 'tall'} />
       </div>
 
       {/* Main content grid — 1 col (tall) or 2 col (standard / wide-2to1) */}

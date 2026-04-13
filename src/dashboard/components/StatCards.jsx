@@ -18,7 +18,7 @@ function StatCard({ label, value, sub, color }) {
   )
 }
 
-export default function StatCards({ session, weekly, wrap = false }) {
+export default function StatCards({ session, weekly, extraUsage = null, wrap = false }) {
   return (
     <div style={{ display: 'flex', gap: 8, flexWrap: wrap ? 'wrap' : 'nowrap' }}>
       <StatCard
@@ -51,6 +51,14 @@ export default function StatCards({ session, weekly, wrap = false }) {
         sub={session.project || '—'}
         color="#fb923c"
       />
+      {extraUsage?.is_enabled && (
+        <StatCard
+          label="Monthly Credits"
+          value={String(extraUsage.used_credits)}
+          sub={`of ${extraUsage.monthly_limit.toLocaleString()} · ${extraUsage.utilization.toFixed(1)}%`}
+          color="#a78bfa"
+        />
+      )}
     </div>
   )
 }
