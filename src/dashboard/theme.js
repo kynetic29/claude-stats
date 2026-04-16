@@ -15,6 +15,7 @@ export const ORANGE = '#fb923c'
 export const MODEL_COLORS = {
   'claude-sonnet-4-6': BLUE,
   'claude-opus-4-6': ORANGE,
+  'claude-opus-4-7': ORANGE,
   'claude-haiku-4-5': EMERALD,
   sonnet: BLUE,
   opus: ORANGE,
