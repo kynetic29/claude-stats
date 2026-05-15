@@ -19,7 +19,7 @@ function CustomTooltip({ active, payload, metric }) {
           ? fmtCost(d.cost)
           : fmtTokens(d.tokens)
         }
-        {' '}<span style={{ color: DIM }}>({d.pct.toFixed(1)}%)</span>
+        {' '}<span style={{ color: DIM }}>({(d.pct ?? 0).toFixed(1)}%)</span>
       </div>
       <div style={{ color: DIM, marginTop: 2 }}>{d.requests} requests</div>
     </div>
@@ -135,13 +135,13 @@ export default function ModelBreakdown({ breakdown }) {
               fontSize: 10, color: '#94a3b8', fontFamily: FONT_MONO,
               flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
             }}>
-              {entry.model.replace('claude-', '')}
+              {(entry.model || 'unknown').replace('claude-', '')}
             </span>
             <span style={{ fontSize: 10, color: '#e2e8f0', fontFamily: FONT_MONO, flexShrink: 0 }}>
               {metric === 'cost' ? fmtCost(entry.cost) : fmtTokens(entry.tokens)}
             </span>
             <span style={{ fontSize: 9, color: DIM, fontFamily: FONT_MONO, flexShrink: 0, minWidth: 34, textAlign: 'right' }}>
-              {entry.pct.toFixed(0)}%
+              {(entry.pct ?? 0).toFixed(0)}%
             </span>
           </div>
         ))}
