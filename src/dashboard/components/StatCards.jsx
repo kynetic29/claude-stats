@@ -55,7 +55,7 @@ export default function StatCards({ session, weekly, extraUsage = null, wrap = f
         <StatCard
           label="Monthly Credits"
           value={String(extraUsage.used_credits)}
-          sub={`of ${extraUsage.monthly_limit.toLocaleString()} · ${extraUsage.utilization.toFixed(1)}%`}
+          sub={`of ${(extraUsage.monthly_limit ?? 0).toLocaleString()} · ${(extraUsage.utilization ?? 0).toFixed(1)}%`}
           color="#a78bfa"
         />
       )}
