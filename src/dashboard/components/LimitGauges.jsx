@@ -74,7 +74,7 @@ function GaugeBar({ label, pct, current, limit, confidence, countdown, countdown
           fontSize: 36, fontWeight: 800, fontFamily: FONT_MONO, color: barColor,
           animation: pulse ? 'pulse 1.5s ease-in-out infinite' : 'none',
         }}>
-          {isLowConfidence ? '~' : ''}{pct.toFixed(1)}%
+          {isLowConfidence ? '~' : ''}{(pct ?? 0).toFixed(1)}%
         </span>
         {isAuthoritative ? (
           <span style={{ fontSize: 11, color: DIM }}>

@@ -34,7 +34,7 @@ export default function AlertBanner({ sessionPct, weeklyPct, thresholds }) {
       color, textAlign: 'center', letterSpacing: '0.05em',
       animation: (sessionPct >= nearCrit || weeklyPct >= nearCrit) ? 'pulse 1.5s ease-in-out infinite' : 'none',
     }}>
-      ⚠ {message} — {sessionPct >= 60 ? `Session: ${sessionPct.toFixed(1)}%` : ''}{sessionPct >= 60 && weeklyPct >= 60 ? ' · ' : ''}{weeklyPct >= 60 ? `Weekly: ${weeklyPct.toFixed(1)}%` : ''}
+      ⚠ {message} — {sessionPct >= 60 ? `Session: ${(sessionPct ?? 0).toFixed(1)}%` : ''}{sessionPct >= 60 && weeklyPct >= 60 ? ' · ' : ''}{weeklyPct >= 60 ? `Weekly: ${(weeklyPct ?? 0).toFixed(1)}%` : ''}
     </div>
   )
 }

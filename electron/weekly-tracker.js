@@ -19,7 +19,7 @@ function getWeeklyStatus(resetDay = 1, resetHour = 6) {
   if (hasApiData) {
     const apiResetAt = new Date(apiUsage.seven_day.resets_at).getTime()
     const apiResetIn = Math.max(0, apiResetAt - Date.now())
-    const apiPct = apiUsage.seven_day.utilization
+    const apiPct = apiUsage.seven_day.utilization ?? 0
 
     const derivedLimit = apiPct > 0 ? weekly.total_tokens * 100 / apiPct : 0
     const eta = computeEta(weekly.total_tokens, derivedLimit, burnRate)
