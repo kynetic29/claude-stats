@@ -37,6 +37,7 @@ export function getLimitColor(pct, warnPct = 60, critPct = 80) {
 }
 
 export function fmtTokens(n) {
+  if (n == null) return '0'
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`
   return String(n)
@@ -71,6 +72,7 @@ export function fmtCountdown(ms) {
 }
 
 export function fmtCost(usd) {
+  if (usd == null) return '$0.0000'
   if (usd >= 1) return `$${usd.toFixed(2)}`
   if (usd >= 0.01) return `$${usd.toFixed(3)}`
   return `$${usd.toFixed(4)}`

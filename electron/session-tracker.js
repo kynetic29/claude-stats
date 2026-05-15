@@ -79,7 +79,7 @@ function getSessionStatus() {
     // Use authoritative data from claude.ai usage API
     const apiResetAt = new Date(apiUsage.five_hour.resets_at).getTime()
     const apiRemainingMs = Math.max(0, apiResetAt - Date.now())
-    const apiPct = apiUsage.five_hour.utilization
+    const apiPct = apiUsage.five_hour.utilization ?? 0
 
     // Derive limit from API utilization percentage + local token count
     const derivedLimit = apiPct > 0 ? totalTokens * 100 / apiPct : 0
