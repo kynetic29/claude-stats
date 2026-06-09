@@ -1,6 +1,6 @@
 {
   "name": "claude-stats",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "description": "Real-time Claude Code usage dashboard for dedicated monitors",
   "author": "kynetic29",
   "main": "electron/main.js",
@@ -32,6 +32,9 @@
     "vite": "^8.0.16",
     "vitest": "^3.2.6",
     "wait-on": "^8.0.0"
+  },
+  "overrides": {
+    "shell-quote": "^1.8.4"
   },
   "build": {
     "appId": "com.claudestats.app",
